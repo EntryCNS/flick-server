@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: flick-admin-service
+
+  r2dbc:
+    pool:
+      initial-size: 10
+      max-size: 30
+      max-idle-time: 30m

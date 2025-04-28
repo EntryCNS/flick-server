@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: flick-place-service
+
+  r2dbc:
+    pool:
+      initial-size: 10
+      max-size: 30
+      max-idle-time: 30m
+
+jwt:
+  secret: b342bbde37491ec37c76d148eaf5bae34063ec9a3833cf1460ecfd74f66985a3e17815dbd1845ff2042dccefd59fcdd086e0000cc80970c43ff95c3361e38114
+  expiration: 360000000

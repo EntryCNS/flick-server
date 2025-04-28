@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: flick-notification-service
+
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: MANUAL_IMMEDIATE
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.flick.notification: DEBUG
+    org.springframework.r2dbc: INFO
+    org.springframework.kafka: INFO
