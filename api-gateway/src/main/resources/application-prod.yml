@@ -7,6 +7,22 @@ spring:
 
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+        add-to-simple-url-handler-mapping: true
       routes:
         - id: place-service
           uri: http://place-service:8080
@@ -14,6 +30,14 @@ spring:
             - Path=/place/**
           filters:
             - StripPrefix=1
+
+        - id: core-service
+          uri: http://core-service:8080
+          predicates:
+            - Path=/core/**
+          filters:
+            - StripPrefix=1
+
         - id: admin-service
           uri: http://admin-service:8080
           predicates:
@@ -22,6 +46,7 @@ spring:
             - StripPrefix=1
       default-filters:
         - AddResponseHeader=Cache-Control, no-cache
+
 eureka:
   client:
     service-url:

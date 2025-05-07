@@ -12,9 +12,6 @@ import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.reactive.CorsConfigurationSource
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import reactor.core.publisher.Mono
 
 @Configuration
@@ -29,31 +26,13 @@ class SecurityConfig {
     fun roleHierarchy(): RoleHierarchy = RoleHierarchyImpl.fromHierarchy("$STUDENT > $TEACHER")
 
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        configuration.allowedOriginPatterns = listOf("*")
-        configuration.allowedMethods = listOf("*")
-        configuration.allowCredentials = true
-        configuration.allowedHeaders = listOf("*")
-        configuration.exposedHeaders = listOf("Authorization")
-        configuration.allowCredentials = false
-        configuration.maxAge = 3600L
-
-        val source = UrlBasedCorsConfigurationSource().apply {
-            registerCorsConfiguration("/**", configuration)
-        }
-
-        return source
-    }
-
-    @Bean
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
 
     @Bean
     fun configure(http: ServerHttpSecurity, jwtAuthenticationFilter: JwtAuthenticationFilter) = http
-        .cors { it.configurationSource(corsConfigurationSource()) }
+        .cors { it.disable() }
         .httpBasic { it.disable() }
         .formLogin { it.disable() }
         .csrf { it.disable() }

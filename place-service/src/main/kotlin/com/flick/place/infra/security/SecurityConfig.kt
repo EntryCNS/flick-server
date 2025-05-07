@@ -9,10 +9,8 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.reactive.CorsConfigurationSource
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import reactor.core.publisher.Mono
 
 
@@ -25,28 +23,10 @@ class SecurityConfig(
         private const val BOOTH = "BOOTH"
         private const val KIOSK = "KIOSK"
     }
-    @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-
-        configuration.allowedOriginPatterns = listOf("*")
-        configuration.allowedMethods = listOf("*")
-        configuration.allowCredentials = true
-        configuration.allowedHeaders = listOf("*")
-        configuration.exposedHeaders = listOf("Authorization")
-        configuration.allowCredentials = false
-        configuration.maxAge = 3600L
-
-        val source = UrlBasedCorsConfigurationSource().apply {
-            registerCorsConfiguration("/**", configuration)
-        }
-
-        return source
-    }
 
     @Bean
-    fun configure(http: ServerHttpSecurity) = http
-        .cors { it.configurationSource(corsConfigurationSource()) }
+    fun configure(http: ServerHttpSecurity): SecurityWebFilterChain = http
+        .cors { it.disable() }
         .httpBasic { it.disable() }
         .formLogin { it.disable() }
         .csrf { it.disable() }

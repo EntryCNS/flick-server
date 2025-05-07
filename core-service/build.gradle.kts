@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":order-domain"))
     implementation(project(":transaction-domain"))
     implementation(project(":product-domain"))
+    implementation(project(":notification-domain"))
 
     runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.2.0.Final")
 
@@ -53,5 +54,5 @@ dependencyManagement {
 }
 
 tasks.withType<BootJar> {
-    archiveFileName.set("user-service.jar")
+    archiveFileName.set("core-service.jar")
 }
