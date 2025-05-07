@@ -1,77 +1,134 @@
 package com.flick.place.infra.security
 
 import io.jsonwebtoken.Jwts
-import org.springframework.http.HttpHeaders
+import org.apache.hc.core5.http.HttpHeaders
 import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
 import java.util.Date
+import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
-
 
 @Component
 class JwtProvider(
-    private val jwtProperties: JwtProperties
+    private val jwtProperties: JwtProperties,
 ) {
-    private val key = SecretKeySpec(
-        jwtProperties.secret.toByteArray(StandardCharsets.UTF_8),
-        Jwts.SIG.HS256.key().build().algorithm
-    )
-
-    fun generateBoothToken(boothId: Long): String {
-        val now = Date()
-        return Jwts.builder()
-            .claim("type", JwtType.BOOTH.name)
-            .subject(boothId.toString())
-            .issuedAt(now)
-            .expiration(Date(now.time + jwtProperties.expiration))
-            .signWith(key)
-            .compact()
+    private val boothKey: SecretKey by lazy {
+        SecretKeySpec(
+            jwtProperties.booth.secret.toByteArray(StandardCharsets.UTF_8),
+            Jwts.SIG.HS512.key().build().algorithm
+        )
     }
 
-    fun generateKioskToken(boothId: Long, sessionId: Long): String {
-        val now = Date()
-        return Jwts.builder()
-            .claim("type", JwtType.KIOSK.name)
-            .subject(boothId.toString())
-            .claim("sessionId", sessionId.toString())
-            .issuedAt(now)
-            .expiration(Date(now.time + jwtProperties.expiration))
-            .signWith(key)
-            .compact()
+    private val kioskKey: SecretKey by lazy {
+        SecretKeySpec(
+            jwtProperties.kiosk.secret.toByteArray(StandardCharsets.UTF_8),
+            Jwts.SIG.HS512.key().build().algorithm
+        )
     }
 
-    fun validateToken(token: String): Boolean {
-        return try {
-            Jwts.parser()
-                .verifyWith(key)
+    fun getType(token: String): JwtType {
+        try {
+            return JwtType.valueOf(Jwts.parser()
+                .verifyWith(boothKey)
                 .build()
                 .parseSignedClaims(token)
-            true
+                .header
+                .type)
         } catch (e: Exception) {
-            false
+            return JwtType.valueOf(Jwts.parser()
+                .verifyWith(kioskKey)
+                .build()
+                .parseSignedClaims(token)
+                .header
+                .type)
         }
     }
 
-    fun getPayload(token: String): JwtPayload {
-        val claims = Jwts.parser()
-            .verifyWith(key)
-            .build()
-            .parseSignedClaims(token)
-            .payload
-
-        val type = JwtType.valueOf(claims.get("type", String::class.java))
-        val id = claims.subject.toLong()
-        val sessionId = if (type == JwtType.KIOSK) {
-            claims.get("sessionId", String::class.java).toLong()
-        } else null
-
-        return JwtPayload(id, type, sessionId)
+    fun getBoothId(token: String): Long {
+        try {
+            return Jwts.parser()
+                .verifyWith(boothKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .subject
+                .toLong()
+        } catch (e: Exception) {
+            return Jwts.parser()
+                .verifyWith(kioskKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .subject
+                .toLong()
+        }
     }
 
-    fun extractToken(request: ServerHttpRequest): String? {
-        return request.headers.getFirst(HttpHeaders.AUTHORIZATION)?.let {
-            if (it.startsWith("Bearer ")) it.substring(7) else null
+    fun getRole(token: String): String {
+        try {
+            return Jwts.parser()
+                .verifyWith(boothKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .get("role", String::class.java)
+        } catch (e: Exception) {
+            return Jwts.parser()
+                .verifyWith(kioskKey)
+                .build()
+                .parseSignedClaims(token)
+                .payload
+                .get("role", String::class.java)
         }
+    }
+
+    fun resolveToken(request: ServerHttpRequest) =
+        request.headers.getFirst(HttpHeaders.AUTHORIZATION)?.removePrefix("Bearer ")
+
+    suspend fun generateBoothToken(boothId: Long): JwtPayload {
+        val now = Date()
+        val accessToken = Jwts.builder()
+            .header()
+            .type(JwtType.ACCESS.name)
+            .and()
+            .subject(boothId.toString())
+            .claim("role", "BOOTH")
+            .issuedAt(now)
+            .expiration(Date(now.time + jwtProperties.booth.accessTokenExpiration))
+            .signWith(boothKey)
+            .compact()
+        val refreshToken = Jwts.builder()
+            .header()
+            .type(JwtType.REFRESH.name)
+            .and()
+            .subject(boothId.toString())
+            .issuedAt(now)
+            .expiration(Date(now.time + jwtProperties.booth.refreshTokenExpiration))
+            .signWith(boothKey)
+            .compact()
+
+        return JwtPayload(
+            accessToken = accessToken,
+            refreshToken = refreshToken,
+        )
+    }
+
+    suspend fun generateKioskToken(boothId: Long): JwtPayload {
+        val now = Date()
+        val accessToken = Jwts.builder()
+            .header()
+            .type(JwtType.ACCESS.name)
+            .and()
+            .subject(boothId.toString())
+            .claim("role", "KIOSK")
+            .issuedAt(now)
+            .expiration(Date(now.time + jwtProperties.kiosk.accessTokenExpiration))
+            .signWith(kioskKey)
+            .compact()
+
+        return JwtPayload(
+            accessToken = accessToken,
+        )
     }
 }

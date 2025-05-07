@@ -1,7 +1,9 @@
 package com.flick.place.infra.security
 
+import com.fasterxml.jackson.annotation.JsonInclude
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class JwtPayload(
-    val id: Long,
-    val type: JwtType,
-    val sessionId: Long? = null
+    val accessToken: String,
+    val refreshToken: String? = null,
 )

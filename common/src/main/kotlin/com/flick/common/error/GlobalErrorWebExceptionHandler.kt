@@ -31,7 +31,6 @@ class GlobalErrorWebExceptionHandler(private val objectMapper: ObjectMapper) : E
     }
 
     private fun createErrorResponse(ex: Throwable, path: String): ErrorResponse {
-        ex.printStackTrace()
         return when (ex) {
             is CustomException -> ErrorResponse(
                 status = ex.status,
@@ -56,7 +55,9 @@ class GlobalErrorWebExceptionHandler(private val objectMapper: ObjectMapper) : E
                 code = "INTERNAL_SERVER_ERROR",
                 message = ex.message ?: "서버 내부 오류",
                 path = path
-            )
+            ).also {
+                ex.printStackTrace()
+            }
         }
     }
 }

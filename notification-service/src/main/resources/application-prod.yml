@@ -1,11 +1,13 @@
 spring:
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/flick
-    username: postgres
-    password: postgres
-    pool:
-      initial-size: 5
-      max-size: 20
+    url: r2dbc:postgresql://postgres:5432/flick
+    username: flick
+    password: pqlamz!!
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/

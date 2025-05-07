@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: flick-api-gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: place-service
+          uri: http://place-service:8080
+          predicates:
+            - Path=/place/**
+          filters:
+            - StripPrefix=1
+        - id: admin-service
+          uri: http://admin-service:8080
+          predicates:
+            - Path=/admin/**
+          filters:
+            - StripPrefix=1
+      default-filters:
+        - AddResponseHeader=Cache-Control, no-cache
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-registry:8761/eureka/

@@ -7,4 +7,17 @@ include("common")
 include("service-registry")
 include("api-gateway")
 include("admin-service", "place-service", "core-service", "notification-service")
-include("booth-domain", "user-domain", "product-domain", "notification-domain", "order-domain", "transaction-domain", "payment-domain", "kiosk-domain")
+include(
+    "booth-domain",
+    "user-domain",
+    "product-domain",
+    "notification-domain",
+    "order-domain",
+    "transaction-domain",
+    "payment-domain",
+    "kiosk-domain",
+
+    )
+include("user-domain")
+include("user-domain")
+include("transaction-domain")

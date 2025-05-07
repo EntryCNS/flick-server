@@ -9,14 +9,25 @@ plugins {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":user-domain"))
+    implementation(project(":payment-domain"))
+    implementation(project(":booth-domain"))
+    implementation(project(":order-domain"))
+    implementation(project(":transaction-domain"))
+    implementation(project(":product-domain"))
+
+    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.2.0.Final")
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.boot:spring-boot-starter-data-r2dbc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.kafka:spring-kafka")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("org.postgresql:r2dbc-postgresql")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.6")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-reflect")

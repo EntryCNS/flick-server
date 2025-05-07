@@ -1,9 +1,10 @@
-package com.flick.domain.order.repository
+package com.flick.domain.payment.repository
 
-import com.flick.domain.order.entity.OrderItem
+import com.flick.domain.payment.entity.OrderItemEntity
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
-interface OrderItemRepository : CoroutineCrudRepository<OrderItem, Long> {
-    fun findByOrderId(orderId: Long): Flow<OrderItem>
+interface OrderItemRepository: CoroutineCrudRepository<OrderItemEntity, Long> {
+    fun findAllByOrderId(orderId: Long): Flow<OrderItemEntity>
+    suspend fun findFirstByOrderId(orderId: Long): OrderItemEntity?
 }

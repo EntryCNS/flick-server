@@ -4,6 +4,13 @@ spring:
     username: flick
     password: pqlamz!!
 
+  data:
+    redis:
+      host: localhost
+      port: 6380
+
+  kafka:
+    bootstrap-servers: localhost:9092
 
 eureka:
   client:
@@ -12,3 +19,7 @@ eureka:
 
 server:
   port: 8081
+
+logging:
+  level:
+    org.springframework.r2dbc.core: debug

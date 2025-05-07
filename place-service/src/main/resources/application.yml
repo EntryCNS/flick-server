@@ -8,6 +8,12 @@ spring:
       max-size: 30
       max-idle-time: 30m
 
-jwt:
-  secret: b342bbde37491ec37c76d148eaf5bae34063ec9a3833cf1460ecfd74f66985a3e17815dbd1845ff2042dccefd59fcdd086e0000cc80970c43ff95c3361e38114
-  expiration: 360000000
+infra:
+  jwt:
+    booth:
+      secret: 4dc58dd3f0333378fe90b0f68366c496f9577f23cc5de65d53ed1eb585db23e09f3514167bca5ca04ffb6e242afc7dc9e7cf0008e0f4e6ee98ad5687f54fc4fc
+      access-token-expiration: 3600000
+      refresh-token-expiration: 604800000
+    kiosk:
+      secret: 4dc58dd3f0333378fe90b0f68366c496f9577f23cc5de65d53ed1eb585db23e09f3514167bca5ca04ffb6e242afc7dc9e7cf0008e0f4e6ee98ad5687f54fc4fc
+      access-token-expiration: 3600000
