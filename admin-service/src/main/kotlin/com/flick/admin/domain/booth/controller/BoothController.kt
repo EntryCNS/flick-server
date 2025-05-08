@@ -4,7 +4,7 @@ import com.flick.admin.domain.booth.service.BoothService
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
-@RestController("/admin/booths")
+@RestController("/booths")
 class BoothController(private val boothService: BoothService) {
     @GetMapping
     suspend fun getBooths() = boothService.getBooths()

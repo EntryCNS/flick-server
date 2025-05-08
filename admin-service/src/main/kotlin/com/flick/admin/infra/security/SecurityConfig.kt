@@ -49,7 +49,7 @@ class SecurityConfig {
                     .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
                     .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
-                    .pathMatchers(HttpMethod.GET, "admin/booths").hasRole(ADMIN)
+                    .pathMatchers(HttpMethod.GET, "/booths").hasRole(ADMIN)
 
                     .anyExchange().authenticated()
             }
