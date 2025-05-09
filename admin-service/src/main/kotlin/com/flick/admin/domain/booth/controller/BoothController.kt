@@ -1,11 +1,17 @@
 package com.flick.admin.domain.booth.controller
 
 import com.flick.admin.domain.booth.service.BoothService
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
-@RestController("/booths")
+@RestController
+@RequestMapping("/booths")
 class BoothController(private val boothService: BoothService) {
     @GetMapping
     suspend fun getBooths() = boothService.getBooths()
+
+    @PostMapping("/{boothId}/approve")
+    suspend fun approveBooth(@PathVariable boothId: Long) = boothService.approveBooth(boothId)
+
+    @PostMapping("/{boothId}/reject")
+    suspend fun rejectBooth(@PathVariable boothId: Long) = boothService.rejectBooth(boothId)
 }

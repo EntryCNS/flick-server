@@ -29,7 +29,7 @@ data class BoothEntity(
     val status: BoothStatus = BoothStatus.PENDING,
 
     @Column("total_sales")
-    val totalSales: Long = 0,
+    val totalSales: Long = 0L,
 
     @CreatedDate
     @Column("created_at")

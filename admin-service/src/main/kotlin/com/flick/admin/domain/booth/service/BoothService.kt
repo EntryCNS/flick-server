@@ -1,13 +1,18 @@
 package com.flick.admin.domain.booth.service
 
 import com.flick.admin.domain.booth.dto.response.BoothResponse
+import com.flick.common.error.CustomException
+import com.flick.domain.booth.enums.BoothStatus
+import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class BoothService(private val boothRepository: BoothRepository) {
+    @Transactional(readOnly = true)
     suspend fun getBooths(): Flow<BoothResponse> {
         val booths = boothRepository.findAll()
 
