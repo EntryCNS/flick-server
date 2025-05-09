@@ -1,4 +1,4 @@
-package com.flick.admin.infra.dauth
+package com.flick.admin.infra.dauth.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.ConstructorBinding

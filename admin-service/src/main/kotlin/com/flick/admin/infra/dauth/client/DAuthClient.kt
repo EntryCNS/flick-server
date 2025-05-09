@@ -1,11 +1,17 @@
-package com.flick.admin.infra.dauth
+package com.flick.admin.infra.dauth.client
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonProperty
+import com.flick.admin.infra.dauth.error.DAuthError
+import com.flick.admin.infra.dauth.config.DAuthProperties
+import com.flick.admin.infra.dauth.dto.response.DAuthCodeResponse
+import com.flick.admin.infra.dauth.dto.response.DAuthToken
+import com.flick.admin.infra.dauth.dto.response.DAuthUser
+import com.flick.admin.infra.dauth.dto.response.DAuthUserResponse
+import com.flick.common.error.CustomException
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
+import reactor.core.publisher.Mono
 
 @Component
 class DAuthClient(
@@ -29,6 +35,11 @@ class DAuthClient(
                 )
             )
             .retrieve()
+            .onStatus({ it.is4xxClientError || it.is5xxServerError }) { res ->
+                res.bodyToMono(String::class.java)
+                    .defaultIfEmpty("DAuth login failed")
+                    .flatMap { Mono.error(CustomException(DAuthError.LOGIN_FAILED, it)) }
+            }
             .awaitBody<DAuthCodeResponse>()
 
         val code = codeResponse.data.location.substringAfter("code=").substringBefore("&")
@@ -44,6 +55,11 @@ class DAuthClient(
                 )
             )
             .retrieve()
+            .onStatus({ it.is4xxClientError || it.is5xxServerError }) { res ->
+                res.bodyToMono(String::class.java)
+                    .defaultIfEmpty("DAuth token exchange failed")
+                    .flatMap { Mono.error(CustomException(DAuthError.TOKEN_EXCHANGE_FAILED, it)) }
+            }
             .awaitBody()
     }
 
@@ -58,6 +74,11 @@ class DAuthClient(
                 )
             )
             .retrieve()
+            .onStatus({ it.is4xxClientError || it.is5xxServerError }) { res ->
+                res.bodyToMono(String::class.java)
+                    .defaultIfEmpty("DAuth token refresh failed")
+                    .flatMap { Mono.error(CustomException(DAuthError.REFRESH_FAILED, it)) }
+            }
             .awaitBody()
     }
 
@@ -66,41 +87,12 @@ class DAuthClient(
             .uri("https://opendodam.b1nd.com/api/user")
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
+            .onStatus({ it.is4xxClientError || it.is5xxServerError }) {res ->
+                res.bodyToMono(String::class.java)
+                    .defaultIfEmpty("DAuth user fetch failed")
+                    .flatMap { Mono.error(CustomException(DAuthError.USER_FETCH_FAILED, it)) }
+            }
             .awaitBody<DAuthUserResponse>()
             .data
     }
 }
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DAuthCodeResponse(
-    val data: CodeLocation
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class CodeLocation(
-    val location: String
-)
-
-data class DAuthToken(
-    @JsonProperty("access_token") val accessToken: String,
-    @JsonProperty("refresh_token") val refreshToken: String? = null,
-    @JsonProperty("token_type") val tokenType: String,
-    @JsonProperty("expires_in") val expiresIn: String
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DAuthUserResponse(
-    val data: DAuthUser
-)
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-data class DAuthUser(
-    val uniqueId: String,
-    val grade: Int?,
-    val room: Int?,
-    val number: Int?,
-    val name: String,
-    val profileImage: String,
-    val role: String,
-    val email: String
-)
