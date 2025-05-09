@@ -51,7 +51,6 @@ class SecurityConfig {
 
             .pathMatchers(HttpMethod.GET, "/booths/**").hasRole(ADMIN)
 
-            .anyExchange().authenticated()
         }
         .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .build()
