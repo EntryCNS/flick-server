@@ -2,16 +2,20 @@ package com.flick.admin.domain.auth.service
 
 import com.flick.admin.domain.auth.dto.request.LoginRequest
 import com.flick.admin.domain.auth.dto.request.RefreshRequest
-import com.flick.admin.infra.dauth.DAuthClient
+import com.flick.admin.infra.dauth.client.DAuthClient
 import com.flick.admin.infra.security.JwtPayload
 import com.flick.admin.infra.security.JwtProvider
-import com.flick.domain.user.entity.UserEntity
-import com.flick.domain.user.entity.UserRoleEntity
+import com.flick.common.error.CustomException
 import com.flick.domain.user.enums.UserRoleType
+import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -19,37 +23,23 @@ class AuthService(
     private val dAuthClient: DAuthClient,
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
+    @Qualifier("writeTx") private val writeTx: TransactionalOperator,
 ) {
-    @Transactional
     suspend fun login(request: LoginRequest): JwtPayload {
         val token = dAuthClient.login(request.id, request.password)
         val dAuthUser = dAuthClient.getUser(token.accessToken)
+        val user = userRepository.findByDAuthId(dAuthUser.uniqueId) ?: throw CustomException(UserError.USER_NOT_FOUND)
+        val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
+            .filter { it.role == UserRoleType.ADMIN }
+            .firstOrNull() != null
 
-        val user = userRepository.findByDAuthId(dAuthUser.uniqueId) ?: run {
-            val newUser = userRepository.save(
-                UserEntity(
-                    dAuthId = dAuthUser.uniqueId,
-                    name = dAuthUser.name,
-                    email = dAuthUser.email,
-                    grade = dAuthUser.grade,
-                    room = dAuthUser.room,
-                    number = dAuthUser.number,
-                    profileUrl = dAuthUser.profileImage
-                )
-            )
+        if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
 
-            userRoleRepository.save(
-                UserRoleEntity(
-                    userId = newUser.id!!,
-                    role = UserRoleType.ADMIN
-                )
-            )
-
-            newUser
+        val updatedUser = writeTx.executeAndAwait {
+            userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
         }
 
-        val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
         return jwtProvider.generateToken(updatedUser.id!!)
     }
 
