@@ -7,17 +7,24 @@ import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
-class BoothService(private val boothRepository: BoothRepository) {
-    @Transactional(readOnly = true)
+class BoothService(
+    private val boothRepository: BoothRepository,
+    @Qualifier("writeTx") private val writeTx: TransactionalOperator,
+) {
     suspend fun getBooths(rawStatuses: List<String>?): Flow<BoothResponse> {
         val booths = when (rawStatuses) {
-            null, emptyList<BoothStatus>() -> boothRepository.findAll()
+            null -> boothRepository.findAll()
             else -> {
-                val statuses = rawStatuses.map { BoothStatus.fromCode(it) }
+                val statuses = rawStatuses.map { raw ->
+                    BoothStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+                        ?: throw CustomException(BoothError.BOOTH_INVALID_STATUS)
+                }
                 boothRepository.findAllByStatusIn(statuses)
             }
         }
@@ -26,7 +33,7 @@ class BoothService(private val boothRepository: BoothRepository) {
             BoothResponse(
                 id = it.id!!,
                 name = it.name,
-                description = it.description!!,
+                description = it.description,
                 status = it.status,
                 totalSales = it.totalSales,
                 createdAt = it.createdAt,
@@ -35,18 +42,20 @@ class BoothService(private val boothRepository: BoothRepository) {
         }
     }
 
-    @Transactional
     suspend fun approveBooth(boothId: Long) {
         val booth = getBooth(boothId)
 
-        boothRepository.save(booth.copy(status = BoothStatus.APPROVED))
+        writeTx.executeAndAwait {
+            boothRepository.save(booth.copy(status = BoothStatus.APPROVED))
+        }
     }
 
-    @Transactional
     suspend fun rejectBooth(boothId: Long) {
         val booth = getBooth(boothId)
 
-        boothRepository.save(booth.copy(status = BoothStatus.REJECTED))
+        writeTx.executeAndAwait {
+            boothRepository.save(booth.copy(status = BoothStatus.REJECTED))
+        }
     }
 
     private suspend fun getBooth(boothId: Long) =
