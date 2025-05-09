@@ -28,4 +28,21 @@ class BoothService(private val boothRepository: BoothRepository) {
             )
         }
     }
+
+    @Transactional
+    suspend fun approveBooth(boothId: Long) {
+        val booth = getBooth(boothId)
+
+        boothRepository.save(booth.copy(status = BoothStatus.APPROVED))
+    }
+
+    @Transactional
+    suspend fun rejectBooth(boothId: Long) {
+        val booth = getBooth(boothId)
+
+        boothRepository.save(booth.copy(status = BoothStatus.REJECTED))
+    }
+
+    private suspend fun getBooth(boothId: Long) =
+        boothRepository.findById(boothId) ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 }
