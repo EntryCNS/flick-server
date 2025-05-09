@@ -16,6 +16,10 @@ import reactor.core.publisher.Mono
 @Configuration
 @EnableWebFluxSecurity
 class SecurityConfig {
+    companion object {
+        private const val ADMIN = "ADMIN"
+    }
+
     @Bean
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
@@ -49,13 +53,8 @@ class SecurityConfig {
             .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
             .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
-            .pathMatchers(HttpMethod.GET, "/booths/**").hasRole(ADMIN)
-
+            .anyExchange().hasRole(ADMIN)
         }
         .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .build()
-
-    companion object {
-        private const val ADMIN = "ADMIN"
-    }
 }
