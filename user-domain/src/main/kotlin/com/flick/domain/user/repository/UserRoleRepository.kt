@@ -1,6 +1,6 @@
 package com.flick.domain.user.repository
 
-import com.flick.domain.payment.entity.UserRoleEntity
+import com.flick.domain.user.entity.UserRoleEntity
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 

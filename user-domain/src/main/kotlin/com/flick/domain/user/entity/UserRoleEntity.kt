@@ -1,6 +1,6 @@
-package com.flick.domain.payment.entity
+package com.flick.domain.user.entity
 
-import com.flick.domain.payment.enums.UserRoleType
+import com.flick.domain.user.enums.UserRoleType
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column

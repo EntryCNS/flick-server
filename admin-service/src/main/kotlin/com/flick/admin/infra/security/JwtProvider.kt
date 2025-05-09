@@ -1,4 +1,4 @@
-package com.flick.core.infra.security
+package com.flick.admin.infra.security
 
 import io.jsonwebtoken.Jwts
 import org.apache.hc.core5.http.HttpHeaders
@@ -20,7 +20,7 @@ class JwtProvider(
         )
     }
 
-    fun getType(token: String) =  JwtType.valueOf(Jwts.parser()
+    fun getType(token: String) = JwtType.valueOf(Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)

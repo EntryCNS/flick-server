@@ -1,4 +1,4 @@
-package com.flick.core.infra.security
+package com.flick.admin.infra.security
 
 import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.toList
@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono
 @Component
 class JwtAuthenticationFilter(
     private val jwtProvider: JwtProvider,
-    private val userRoleRepository: UserRoleRepository
+    private val userRoleRepository: UserRoleRepository,
 ) : WebFilter {
     override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
         println("request: ${exchange.request.method} ${exchange.request.path}")

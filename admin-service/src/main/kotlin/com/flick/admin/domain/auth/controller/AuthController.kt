@@ -1,8 +1,8 @@
-package com.flick.core.domain.auth.controller
+package com.flick.admin.domain.auth.controller
 
-import com.flick.core.domain.auth.dto.request.LoginRequest
-import com.flick.core.domain.auth.dto.request.RefreshRequest
-import com.flick.core.domain.auth.service.AuthService
+import com.flick.admin.domain.auth.dto.request.LoginRequest
+import com.flick.admin.domain.auth.dto.request.RefreshRequest
+import com.flick.admin.domain.auth.service.AuthService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping

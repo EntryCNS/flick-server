@@ -1,4 +1,4 @@
-package com.flick.core.infra.security
+package com.flick.admin.infra.security
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.bind.ConstructorBinding

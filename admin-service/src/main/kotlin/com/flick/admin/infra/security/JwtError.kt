@@ -1,4 +1,4 @@
-package com.flick.core.infra.security
+package com.flick.admin.infra.security
 
 import com.flick.common.error.CustomError
 import org.springframework.http.HttpStatus

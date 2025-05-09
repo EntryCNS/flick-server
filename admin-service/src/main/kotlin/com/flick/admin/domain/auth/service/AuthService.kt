@@ -1,13 +1,13 @@
-package com.flick.core.domain.auth.service
+package com.flick.admin.domain.auth.service
 
-import com.flick.core.domain.auth.dto.request.LoginRequest
-import com.flick.core.domain.auth.dto.request.RefreshRequest
-import com.flick.core.infra.dauth.DAuthClient
-import com.flick.core.infra.security.JwtPayload
-import com.flick.core.infra.security.JwtProvider
+import com.flick.admin.domain.auth.dto.request.LoginRequest
+import com.flick.admin.domain.auth.dto.request.RefreshRequest
+import com.flick.admin.infra.dauth.DAuthClient
+import com.flick.admin.infra.security.JwtPayload
+import com.flick.admin.infra.security.JwtProvider
 import com.flick.domain.user.entity.UserEntity
-import com.flick.domain.payment.entity.UserRoleEntity
-import com.flick.domain.payment.enums.UserRoleType
+import com.flick.domain.user.entity.UserRoleEntity
+import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import org.springframework.stereotype.Service
@@ -39,11 +39,10 @@ class AuthService(
                 )
             )
 
-            val role = if (dAuthUser.role == "TEACHER") UserRoleType.TEACHER else UserRoleType.STUDENT
             userRoleRepository.save(
                 UserRoleEntity(
                     userId = newUser.id!!,
-                    role = role
+                    role = UserRoleType.ADMIN
                 )
             )
 

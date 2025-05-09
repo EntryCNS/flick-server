@@ -7,3 +7,13 @@ spring:
       initial-size: 10
       max-size: 30
       max-idle-time: 30m
+
+infra:
+  jwt:
+    secret: bc9309a792d01d4266f3ab235b91baa64be8478aaaa43703b55feaac35792620e0a7cde630930397af2d68874c3e0bfa7db4640e14d88bfbaf15eb23514be2a1
+    access-token-expiration: 3600000
+    refresh-token-expiration: 604800000
+  dauth:
+    client-id: fe5a3f44c8104667bd52e368c4a7f80516a25dee9445446c9ec5cb7f4ea19559
+    client-secret: 1fc2e956c40f44c19b16c62b0f6bed40ae3773e95fd449369f51aa6e1201aebc
+    redirect-url: https://api.flick.com/auth/callback
