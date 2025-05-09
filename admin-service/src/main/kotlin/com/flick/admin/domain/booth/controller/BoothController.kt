@@ -1,14 +1,13 @@
 package com.flick.admin.domain.booth.controller
 
 import com.flick.admin.domain.booth.service.BoothService
-import com.flick.domain.booth.enums.BoothStatus
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/booths")
 class BoothController(private val boothService: BoothService) {
     @GetMapping
-    suspend fun getBooths(@RequestParam statuses: List<BoothStatus>?) = boothService.getBooths(statuses)
+    suspend fun getBooths(@RequestParam("status") rawStatuses: List<String>?) = boothService.getBooths(rawStatuses)
 
     @PostMapping("/{boothId}/approve")
     suspend fun approveBooth(@PathVariable boothId: Long) = boothService.approveBooth(boothId)

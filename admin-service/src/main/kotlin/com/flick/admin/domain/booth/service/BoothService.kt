@@ -13,10 +13,13 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class BoothService(private val boothRepository: BoothRepository) {
     @Transactional(readOnly = true)
-    suspend fun getBooths(statuses: List<BoothStatus>?): Flow<BoothResponse> {
-        val booths = when (statuses) {
+    suspend fun getBooths(rawStatuses: List<String>?): Flow<BoothResponse> {
+        val booths = when (rawStatuses) {
             null, emptyList<BoothStatus>() -> boothRepository.findAll()
-            else -> boothRepository.findAllByStatusIn(statuses)
+            else -> {
+                val statuses = rawStatuses.map { BoothStatus.fromCode(it) }
+                boothRepository.findAllByStatusIn(statuses)
+            }
         }
 
         return booths.map {
