@@ -5,19 +5,16 @@ import com.flick.common.error.CustomException
 import com.flick.common.utils.logger
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
-import com.flick.domain.payment.entity.PaymentRequestEntity
+import com.flick.domain.order.entity.OrderEntity
 import com.flick.domain.order.enums.OrderStatus
-import com.flick.domain.payment.enums.PaymentMethod
 import com.flick.domain.order.error.OrderError
+import com.flick.domain.payment.entity.PaymentRequestEntity
+import com.flick.domain.payment.enums.PaymentMethod
 import com.flick.domain.payment.repository.OrderRepository
 import com.flick.domain.payment.repository.PaymentRequestRepository
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
-import com.flick.place.domain.payment.dto.CreateQrPaymentRequest
-import com.flick.place.domain.payment.dto.CreateQrPaymentResponse
-import com.flick.place.domain.payment.dto.CreateStudentIdPaymentRequest
-import com.flick.place.domain.payment.dto.CreateStudentIdPaymentResponse
-import com.flick.place.domain.payment.dto.PaymentRequestEventDto
+import com.flick.place.domain.payment.dto.*
 import com.flick.place.infra.security.SecurityHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,19 +34,16 @@ class PaymentService(
     private val log = logger()
 
     suspend fun createQrPayment(request: CreateQrPaymentRequest): CreateQrPaymentResponse {
-        val order = orderRepository.findByIdAndBoothId(request.orderId, securityHolder.getBoothId())
-            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+        val order = getPendingOrder(request.orderId)
+        val token = generatePaymentToken()
 
-        if (order.status != OrderStatus.PENDING)
-            throw CustomException(OrderError.ORDER_NOT_PENDING)
-
-        val token = (1..32).map { (('a'..'z') + ('1'..'9')).random() }.joinToString("")
-
-        val paymentRequest = paymentRequestRepository.save(PaymentRequestEntity(
-            orderId = order.id!!,
-            method = PaymentMethod.QR_CODE,
-            token = token,
-        ))
+        val paymentRequest = paymentRequestRepository.save(
+            PaymentRequestEntity(
+                orderId = order.id!!,
+                method = PaymentMethod.QR_CODE,
+                token = token,
+            )
+        )
 
         return CreateQrPaymentResponse(
             id = paymentRequest.id!!,
@@ -58,19 +52,16 @@ class PaymentService(
     }
 
     suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse {
-        val order = orderRepository.findByIdAndBoothId(request.orderId, securityHolder.getBoothId())
-            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+        val order = getPendingOrder(request.orderId)
+        val token = generatePaymentToken()
 
-        if (order.status != OrderStatus.PENDING)
-            throw CustomException(OrderError.ORDER_NOT_PENDING)
-
-        val token = (1..32).map { (('a'..'z') + ('1'..'9')).random() }.joinToString("")
-
-        val paymentRequest = paymentRequestRepository.save(PaymentRequestEntity(
-            orderId = order.id!!,
-            method = PaymentMethod.QR_CODE,
-            token = token,
-        ))
+        val paymentRequest = paymentRequestRepository.save(
+            PaymentRequestEntity(
+                orderId = order.id!!,
+                method = PaymentMethod.STUDENT_ID,
+                token = token,
+            )
+        )
 
         val booth = boothRepository.findById(order.boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
@@ -94,6 +85,17 @@ class PaymentService(
             id = paymentRequest.id!!,
         )
     }
+
+    private suspend fun getPendingOrder(orderId: Long): OrderEntity {
+        val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
+            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+
+        if (order.status != OrderStatus.PENDING) throw CustomException(OrderError.ORDER_NOT_PENDING)
+
+        return order
+    }
+
+    private fun generatePaymentToken() = (1..32).map { (('a'..'z') + ('1'..'9')).random() }.joinToString("")
 
     private suspend fun sendPaymentRequestNotification(
         userId: Long,
