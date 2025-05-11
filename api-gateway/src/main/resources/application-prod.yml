@@ -10,8 +10,7 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:3000"
+            allowedOrigins: "*"
             allowedMethods:
               - GET
               - POST
@@ -22,7 +21,6 @@ spring:
             allowedHeaders: "*"
             allowCredentials: true
             maxAge: 3600
-        add-to-simple-url-handler-mapping: true
       routes:
         - id: place-service
           uri: http://place-service:8080
@@ -30,6 +28,12 @@ spring:
             - Path=/place/**
           filters:
             - StripPrefix=1
+        - id: place-service-ws
+          uri: ws://place-service:8080
+          predicates:
+            - Path=/place/ws/**
+          filters:
+            -  StripPrefix=1
 
         - id: core-service
           uri: http://core-service:8080

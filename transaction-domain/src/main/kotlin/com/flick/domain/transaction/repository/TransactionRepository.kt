@@ -5,5 +5,5 @@ import kotlinx.coroutines.flow.Flow
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface TransactionRepository: CoroutineCrudRepository<TransactionEntity, Long> {
-    fun findAllByUserId(userId: Long): Flow<TransactionEntity>
+    fun findAllByUserIdOrderByCreatedAtDesc(userId: Long): Flow<TransactionEntity>
 }
