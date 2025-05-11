@@ -1,4 +1,4 @@
-package com.flick.admin.infra.config
+package com.flick.admin.infra.transaction
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
