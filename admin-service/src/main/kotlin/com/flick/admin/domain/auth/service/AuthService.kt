@@ -12,10 +12,7 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -24,7 +21,6 @@ class AuthService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
     private val jwtProvider: JwtProvider,
-    @Qualifier("writeTx") private val writeTx: TransactionalOperator,
 ) {
     suspend fun login(request: LoginRequest): JwtPayload {
         val token = dAuthClient.login(request.id, request.password)
@@ -36,9 +32,7 @@ class AuthService(
 
         if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
 
-        val updatedUser = writeTx.executeAndAwait {
-            userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
-        }
+        val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
 
         return jwtProvider.generateToken(updatedUser.id!!)
     }

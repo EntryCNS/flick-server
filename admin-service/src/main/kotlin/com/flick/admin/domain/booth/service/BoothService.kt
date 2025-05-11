@@ -1,25 +1,25 @@
 package com.flick.admin.domain.booth.service
 
+import com.flick.admin.domain.booth.dto.response.BoothRankingResponse
 import com.flick.admin.domain.booth.dto.response.BoothResponse
+import com.flick.admin.infra.websocket.BoothWebSocketHandler
 import com.flick.common.error.CustomException
 import com.flick.domain.booth.enums.BoothStatus
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import org.springframework.beans.factory.annotation.Qualifier
+import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class BoothService(
     private val boothRepository: BoothRepository,
-    @Qualifier("writeTx") private val writeTx: TransactionalOperator,
+    private val boothWebSocketHandler: BoothWebSocketHandler,
 ) {
-    suspend fun getBooths(rawStatuses: List<String>?): Flow<BoothResponse> {
+    suspend fun getBooths(rawStatuses: List<String>): Flow<BoothResponse> {
         val booths = when (rawStatuses) {
-            null -> boothRepository.findAll()
+            emptyList<String>() -> boothRepository.findAll()
             else -> {
                 val statuses = rawStatuses.map { raw ->
                     BoothStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
@@ -42,20 +42,23 @@ class BoothService(
         }
     }
 
-    suspend fun approveBooth(boothId: Long) {
-        val booth = getBooth(boothId)
+    suspend fun approveBooth(boothId: Long) = boothRepository.save(getBooth(boothId).copy(status = BoothStatus.APPROVED))
 
-        writeTx.executeAndAwait {
-            boothRepository.save(booth.copy(status = BoothStatus.APPROVED))
+    suspend fun rejectBooth(boothId: Long) = boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
+
+    suspend fun publishRanking() {
+        val booths = boothRepository.findAllByOrderByTotalSalesDesc().toList()
+
+        val ranking = booths.mapIndexed { index, it ->
+            BoothRankingResponse(
+                rank = index + 1,
+                id = it.id!!,
+                name = it.name,
+                totalSales = it.totalSales,
+            )
         }
-    }
 
-    suspend fun rejectBooth(boothId: Long) {
-        val booth = getBooth(boothId)
-
-        writeTx.executeAndAwait {
-            boothRepository.save(booth.copy(status = BoothStatus.REJECTED))
-        }
+        boothWebSocketHandler.sendRankingUpdate(ranking)
     }
 
     private suspend fun getBooth(boothId: Long) =
