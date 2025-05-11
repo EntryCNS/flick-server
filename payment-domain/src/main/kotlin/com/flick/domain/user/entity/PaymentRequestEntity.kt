@@ -1,7 +1,7 @@
 package com.flick.domain.payment.entity
 
 import com.flick.domain.payment.enums.PaymentMethod
-import com.flick.domain.payment.enums.PaymentStatus
+import com.flick.domain.user.enums.PaymentStatus
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
