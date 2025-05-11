@@ -5,7 +5,7 @@ import com.flick.domain.booth.enums.BoothStatus
 import com.flick.domain.booth.error.BoothError
 import org.springframework.core.convert.converter.Converter
 
-object BoothStatusConverter : Converter<String, BoothStatus> {
+class BoothStatusConverter : Converter<String, BoothStatus> {
     override fun convert(source: String): BoothStatus {
         val status = BoothStatus.entries.find { it.name.equals(source, ignoreCase = true) }
 

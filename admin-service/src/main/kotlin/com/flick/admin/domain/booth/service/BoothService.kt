@@ -1,6 +1,5 @@
 package com.flick.admin.domain.booth.service
 
-import com.flick.admin.domain.booth.BoothStatusConverter
 import com.flick.admin.domain.booth.dto.response.BoothRankingResponse
 import com.flick.admin.domain.booth.dto.response.BoothResponse
 import com.flick.admin.infra.websocket.BoothWebSocketHandler
@@ -18,11 +17,10 @@ class BoothService(
     private val boothRepository: BoothRepository,
     private val boothWebSocketHandler: BoothWebSocketHandler,
 ) {
-    suspend fun getBooths(rawStatuses: List<String>): Flow<BoothResponse> {
-        val booths = if (rawStatuses == emptyList<String>()) {
+    suspend fun getBooths(statuses: List<BoothStatus>): Flow<BoothResponse> {
+        val booths = if (statuses.isEmpty()) {
             boothRepository.findAll()
         } else {
-            val statuses = rawStatuses.map { raw -> BoothStatusConverter.convert(raw) }
             boothRepository.findAllByStatusIn(statuses)
         }
 
