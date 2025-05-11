@@ -16,7 +16,7 @@ class BoothKafkaListener(
 ) {
     private val log = logger()
 
-    @KafkaListener(topics = ["booth-sales-updated"], groupId = "admin-service")
+    @KafkaListener(topics = ["booth-sales-updated"], groupId = "admin-group")
     fun handleBoothSalesUpdated(message: String) {
         try {
             val event = objectMapper.readValue<BoothSalesUpdatedDto>(message)
