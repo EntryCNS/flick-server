@@ -1,11 +1,11 @@
 package com.flick.admin.infra.dauth.client
 
-import com.flick.admin.infra.dauth.error.DAuthError
 import com.flick.admin.infra.dauth.config.DAuthProperties
 import com.flick.admin.infra.dauth.dto.response.DAuthCodeResponse
 import com.flick.admin.infra.dauth.dto.response.DAuthToken
 import com.flick.admin.infra.dauth.dto.response.DAuthUser
 import com.flick.admin.infra.dauth.dto.response.DAuthUserResponse
+import com.flick.admin.infra.dauth.error.DAuthError
 import com.flick.common.error.CustomException
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -87,7 +87,7 @@ class DAuthClient(
             .uri("https://opendodam.b1nd.com/api/user")
             .header("Authorization", "Bearer $accessToken")
             .retrieve()
-            .onStatus({ it.is4xxClientError || it.is5xxServerError }) {res ->
+            .onStatus({ it.is4xxClientError || it.is5xxServerError }) { res ->
                 res.bodyToMono(String::class.java)
                     .defaultIfEmpty("DAuth user fetch failed")
                     .flatMap { Mono.error(CustomException(DAuthError.USER_FETCH_FAILED, it)) }
