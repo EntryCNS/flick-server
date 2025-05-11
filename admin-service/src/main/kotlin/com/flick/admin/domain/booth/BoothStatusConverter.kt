@@ -8,7 +8,7 @@ import org.springframework.core.convert.converter.Converter
 object BoothStatusConverter : Converter<String, BoothStatus> {
     override fun convert(source: String): BoothStatus {
         val status = BoothStatus.entries.find { it.name.equals(source, ignoreCase = true) }
-        
+
         return status ?: throw CustomException(BoothError.BOOTH_INVALID_STATUS)
     }
 }
