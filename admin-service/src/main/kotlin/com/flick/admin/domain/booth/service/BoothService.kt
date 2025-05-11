@@ -1,5 +1,6 @@
 package com.flick.admin.domain.booth.service
 
+import com.flick.admin.domain.booth.BoothStatusConverter
 import com.flick.admin.domain.booth.dto.response.BoothRankingResponse
 import com.flick.admin.domain.booth.dto.response.BoothResponse
 import com.flick.admin.infra.websocket.BoothWebSocketHandler
@@ -21,10 +22,7 @@ class BoothService(
         val booths = if (rawStatuses == emptyList<String>()) {
             boothRepository.findAll()
         } else {
-            val statuses = rawStatuses.map { raw ->
-                BoothStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-                    ?: throw CustomException(BoothError.BOOTH_INVALID_STATUS)
-            }
+            val statuses = rawStatuses.map { raw -> BoothStatusConverter.convert(raw) }
             boothRepository.findAllByStatusIn(statuses)
         }
 
@@ -41,7 +39,8 @@ class BoothService(
         }
     }
 
-    suspend fun approveBooth(boothId: Long) = boothRepository.save(getBooth(boothId).copy(status = BoothStatus.APPROVED))
+    suspend fun approveBooth(boothId: Long) =
+        boothRepository.save(getBooth(boothId).copy(status = BoothStatus.APPROVED))
 
     suspend fun rejectBooth(boothId: Long) = boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
 
