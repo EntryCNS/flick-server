@@ -1,4 +1,4 @@
-package com.flick.core.config
+package com.flick.core.infra.kafka
 
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
