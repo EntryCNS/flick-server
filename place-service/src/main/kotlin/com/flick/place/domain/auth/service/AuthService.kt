@@ -39,7 +39,7 @@ class AuthService(
     }
 
     suspend fun register(request: RegisterRequest) {
-        if (boothRepository.findByUsername(request.username) != null)
+        if (boothRepository.existsByUsername(request.username))
             throw CustomException(BoothError.BOOTH_USERNAME_ALREADY_EXISTS)
 
         boothRepository.save(BoothEntity(

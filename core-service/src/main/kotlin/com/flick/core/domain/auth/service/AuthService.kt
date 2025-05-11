@@ -6,8 +6,8 @@ import com.flick.core.infra.dauth.DAuthClient
 import com.flick.core.infra.security.JwtPayload
 import com.flick.core.infra.security.JwtProvider
 import com.flick.domain.user.entity.UserEntity
-import com.flick.domain.payment.entity.UserRoleEntity
-import com.flick.domain.payment.enums.UserRoleType
+import com.flick.domain.user.entity.UserRoleEntity
+import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import org.springframework.stereotype.Service
@@ -54,7 +54,7 @@ class AuthService(
         return jwtProvider.generateToken(updatedUser.id!!)
     }
 
-    suspend fun refresh(request: RefreshRequest): JwtPayload {
+    fun refresh(request: RefreshRequest): JwtPayload {
         val userId = jwtProvider.getUserId(request.refreshToken)
 
         return jwtProvider.generateToken(userId)

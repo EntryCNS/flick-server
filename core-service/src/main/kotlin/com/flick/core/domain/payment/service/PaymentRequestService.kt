@@ -2,10 +2,7 @@ package com.flick.core.domain.payment.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.flick.common.error.CustomException
-import com.flick.core.domain.payment.dto.ConfirmPaymentRequestRequest
-import com.flick.core.domain.payment.dto.OrderCompletedEvent
-import com.flick.core.domain.payment.dto.PaymentRequestResponse
-import com.flick.core.domain.payment.dto.PaymentStatusUpdateEvent
+import com.flick.core.domain.payment.dto.*
 import com.flick.core.infra.security.SecurityHolder
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
@@ -24,7 +21,7 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.enums.TransactionType
 import com.flick.domain.transaction.repository.TransactionRepository
-import com.flick.domain.user.error.PaymentRequestError
+import com.flick.domain.payment.error.PaymentRequestError
 import com.flick.domain.user.error.UserError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -59,6 +56,8 @@ class PaymentRequestService(
         )
     }
 
+    // CoroutineCrudRepository는 논블로킹인데 논블로킹에 withContext 쓰면 안 되는거 아닌가요?
+    // suspend 함수에 @Transactional, @Retryable 붙이면 안 되는거 아닌가요?
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     @Retryable(value = [OptimisticLockingFailureException::class], maxAttempts = 3)
     suspend fun confirmPaymentRequest(request: ConfirmPaymentRequestRequest) = withContext(Dispatchers.IO) {
@@ -145,8 +144,24 @@ class PaymentRequestService(
         val booth = boothRepository.findById(updatedOrder.boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
+        val updatedBooth = boothRepository.save(booth.copy(
+            totalSales = booth.totalSales + order.totalAmount,
+            updatedAt = now
+        ))
+
+        sendBoothSalesUpdatedEvent(booth.id!!, updatedBooth.totalSales)
         sendPaymentStatusUpdate(paymentRequest.id!!, order.id!!, PaymentStatus.COMPLETED, paymentRequest.method, order.totalAmount)
         sendOrderCompletedNotification(userId, order.id!!, booth.name, order.totalAmount)
+    }
+
+    private fun sendBoothSalesUpdatedEvent(boothId: Long, totalSales: Long) {
+        val event = BoothSalesUpdatedEvent(
+            boothId = boothId,
+            totalSales = totalSales
+        )
+
+        val eventJson = objectMapper.writeValueAsString(event)
+        kafkaTemplate.send("booth-sales-updated", eventJson)
     }
 
     private fun sendPaymentStatusUpdate(requestId: Long, orderId: Long, status: PaymentStatus, paymentMethod: PaymentMethod?, amount: Long?) {

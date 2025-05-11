@@ -1,4 +1,4 @@
-package com.flick.domain.user.error
+package com.flick.domain.payment.error
 
 import com.flick.common.error.CustomError
 import org.springframework.http.HttpStatus

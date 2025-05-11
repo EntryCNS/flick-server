@@ -19,7 +19,7 @@ class PaymentKafkaListener(
     private val objectMapper: ObjectMapper,
     private val orderRepository: OrderRepository,
     private val paymentWebSocketHandler: PaymentWebSocketHandler,
-    private val paymentRequestRepository: PaymentRequestRepository
+    private val paymentRequestRepository: PaymentRequestRepository,
 ) {
     private val log = logger()
 

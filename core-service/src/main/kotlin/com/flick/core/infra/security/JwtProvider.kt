@@ -38,7 +38,7 @@ class JwtProvider(
     fun resolveToken(request: ServerHttpRequest) =
         request.headers.getFirst(HttpHeaders.AUTHORIZATION)?.removePrefix("Bearer ")
 
-    suspend fun generateToken(userId: Long): JwtPayload {
+    fun generateToken(userId: Long): JwtPayload {
         val now = Date()
         val accessToken = Jwts.builder()
             .header()
