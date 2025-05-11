@@ -54,7 +54,7 @@ class AuthService(
         return jwtProvider.generateToken(updatedUser.id!!)
     }
 
-    suspend fun refresh(request: RefreshRequest): JwtPayload {
+    fun refresh(request: RefreshRequest): JwtPayload {
         val userId = jwtProvider.getUserId(request.refreshToken)
 
         return jwtProvider.generateToken(userId)
