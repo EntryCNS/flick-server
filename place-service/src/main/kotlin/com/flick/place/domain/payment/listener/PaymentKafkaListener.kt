@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.flick.common.utils.logger
 import com.flick.domain.order.enums.OrderStatus
-import com.flick.domain.user.enums.PaymentStatus
+import com.flick.domain.payment.enums.PaymentStatus
 import com.flick.domain.payment.repository.OrderRepository
 import com.flick.domain.payment.repository.PaymentRequestRepository
 import com.flick.place.domain.payment.dto.PaymentRequestEventDto

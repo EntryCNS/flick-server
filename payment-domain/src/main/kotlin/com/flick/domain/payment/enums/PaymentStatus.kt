@@ -1,4 +1,4 @@
-package com.flick.domain.user.enums
+package com.flick.domain.payment.enums
 
 enum class PaymentStatus {
     PENDING, COMPLETED, FAILED, EXPIRED

@@ -8,7 +8,7 @@ import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.payment.entity.PaymentEntity
 import com.flick.domain.payment.entity.PaymentRequestEntity
-import com.flick.domain.user.enums.PaymentStatus
+import com.flick.domain.payment.enums.PaymentStatus
 import com.flick.domain.order.entity.OrderEntity
 import com.flick.domain.order.error.OrderError
 import com.flick.domain.order.enums.OrderStatus
@@ -21,7 +21,7 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.enums.TransactionType
 import com.flick.domain.transaction.repository.TransactionRepository
-import com.flick.domain.user.error.PaymentRequestError
+import com.flick.domain.payment.error.PaymentRequestError
 import com.flick.domain.user.error.UserError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
