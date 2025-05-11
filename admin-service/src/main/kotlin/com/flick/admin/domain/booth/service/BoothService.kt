@@ -18,15 +18,14 @@ class BoothService(
     private val boothWebSocketHandler: BoothWebSocketHandler,
 ) {
     suspend fun getBooths(rawStatuses: List<String>): Flow<BoothResponse> {
-        val booths = when (rawStatuses) {
-            emptyList<String>() -> boothRepository.findAll()
-            else -> {
-                val statuses = rawStatuses.map { raw ->
-                    BoothStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-                        ?: throw CustomException(BoothError.BOOTH_INVALID_STATUS)
-                }
-                boothRepository.findAllByStatusIn(statuses)
+        val booths = if (rawStatuses == emptyList<String>()) {
+            boothRepository.findAll()
+        } else {
+            val statuses = rawStatuses.map { raw ->
+                BoothStatus.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+                    ?: throw CustomException(BoothError.BOOTH_INVALID_STATUS)
             }
+            boothRepository.findAllByStatusIn(statuses)
         }
 
         return booths.map {
