@@ -18,11 +18,7 @@ class BoothService(
     private val boothWebSocketHandler: BoothWebSocketHandler,
 ) {
     suspend fun getBooths(statuses: List<BoothStatus>): Flow<BoothResponse> {
-        val booths = if (statuses.isEmpty()) {
-            boothRepository.findAll()
-        } else {
-            boothRepository.findAllByStatusIn(statuses)
-        }
+        val booths = if (statuses.isEmpty()) boothRepository.findAll() else boothRepository.findAllByStatusIn(statuses)
 
         return booths.map {
             BoothResponse(

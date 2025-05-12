@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component
 
 @Component
 class SecurityHolder {
-    suspend fun getUserId(): Long {
+    suspend fun getAdminId(): Long {
         return ReactiveSecurityContextHolder.getContext()
             .mapNotNull { it.authentication.principal as? Long }
             .awaitSingleOrNull()

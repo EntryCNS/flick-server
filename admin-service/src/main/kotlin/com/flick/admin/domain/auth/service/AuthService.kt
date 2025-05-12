@@ -10,7 +10,6 @@ import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -27,8 +26,7 @@ class AuthService(
         val dAuthUser = dAuthClient.getUser(token.accessToken)
         val user = userRepository.findByDAuthId(dAuthUser.uniqueId) ?: throw CustomException(UserError.USER_NOT_FOUND)
         val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
-            .filter { it.role == UserRoleType.ADMIN }
-            .firstOrNull() != null
+            .firstOrNull { it.role == UserRoleType.ADMIN } != null
 
         if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
 
