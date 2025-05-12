@@ -1,6 +1,7 @@
 package com.flick.core.domain.transaction.service
 
 import com.flick.common.error.CustomException
+import com.flick.core.domain.transaction.dto.response.TransactionDetailResponse
 import com.flick.core.domain.transaction.dto.response.TransactionResponse
 import com.flick.core.infra.security.SecurityHolder
 import com.flick.domain.booth.error.BoothError
@@ -27,7 +28,7 @@ class TransactionService(
 ) {
     suspend fun getMyTransactions(): Flow<TransactionResponse> {
         val userId = securityHolder.getUserId()
-        val transactions = transactionRepository.findAllByUserId(userId)
+        val transactions = transactionRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
 
         return transactions.map {
             val order = orderRepository.findById(it.orderId!!)
@@ -53,5 +54,43 @@ class TransactionService(
                 createdAt = it.createdAt,
             )
         }
+    }
+
+    suspend fun getTransaction(transactionId: Long): TransactionDetailResponse {
+        val transaction = transactionRepository.findById(transactionId)
+            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+
+        val order = orderRepository.findById(transaction.orderId!!)
+            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+        val booth = boothRepository.findById(order.boothId)
+            ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
+        val items = orderItemRepository.findAllByOrderId(order.id!!)
+            ?: throw CustomException(OrderItemError.ORDER_ITEM_NOT_FOUND)
+
+        return TransactionDetailResponse(
+            id = transaction.id!!,
+            type = transaction.type,
+            amount = transaction.amount,
+            booth = TransactionDetailResponse.Booth(
+                id = booth.id!!,
+                name = booth.name,
+            ),
+            items = items.map {
+                val product = productRepository.findById(it.productId)
+                    ?: throw CustomException(ProductError.PRODUCT_NOT_FOUND)
+                TransactionDetailResponse.OrderItem(
+                    id = it.id!!,
+                    product = TransactionDetailResponse.Product(
+                        id = product.id!!,
+                        name = product.name,
+                        price = product.price,
+                    ),
+                    price = it.price,
+                    quantity = it.quantity,
+                )
+            },
+            memo = transaction.memo,
+            createdAt = transaction.createdAt,
+        )
     }
 }
