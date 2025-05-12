@@ -1,4 +1,4 @@
-package com.flick.admin.domain.booth
+package com.flick.admin.domain.booth.converter
 
 import com.flick.common.error.CustomException
 import com.flick.domain.booth.enums.BoothStatus
