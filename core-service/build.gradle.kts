@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":product-domain"))
     implementation(project(":notification-domain"))
     implementation(project(":notice-domain"))
+    implementation(project(":inquiry-domain"))
 
     runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.2.0.Final")
 
