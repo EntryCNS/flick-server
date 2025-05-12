@@ -1,5 +1,7 @@
 package com.flick.admin.domain.user.service
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.flick.admin.domain.user.dto.PointChargedEventDto
 import com.flick.admin.domain.user.dto.request.ChargeUserPointRequest
 import com.flick.admin.domain.user.dto.response.UserResponse
 import com.flick.admin.infra.security.SecurityHolder
@@ -15,6 +17,7 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.reactive.executeAndAwait
@@ -25,6 +28,8 @@ class UserService(
     private val userRoleRepository: UserRoleRepository,
     private val transactionalRepository: TransactionRepository,
     private val securityHolder: SecurityHolder,
+    private val kafkaTemplate: KafkaTemplate<String, String>,
+    private val objectMapper: ObjectMapper,
     @Qualifier("writeTx") private val writeTx: TransactionalOperator,
 ) {
     suspend fun getUsers(
@@ -96,6 +101,15 @@ class UserService(
             )
 
             userRepository.save(user.copy(balance = balanceAfter))
+
+            val event = PointChargedEventDto(
+                userId = user.id!!,
+                amount = amount,
+                balanceAfter = balanceAfter,
+            )
+
+            val eventJson = objectMapper.writeValueAsString(event)
+            kafkaTemplate.send("point-charged", eventJson)
         }
     }
 }
