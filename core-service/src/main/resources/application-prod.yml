@@ -11,3 +11,8 @@ eureka:
   client:
     service-url:
       defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    org.springframework.r2dbc.core: DEBUG
+    com.flick.core: DEBUG

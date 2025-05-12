@@ -7,7 +7,6 @@ import com.flick.admin.domain.user.dto.response.UserResponse
 import com.flick.admin.infra.security.SecurityHolder
 import com.flick.common.dto.PageResponse
 import com.flick.common.error.CustomException
-import com.flick.core.infra.security.SecurityHolder
 import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.enums.TransactionType
 import com.flick.domain.transaction.repository.TransactionRepository
@@ -16,9 +15,7 @@ import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
-import com.flick.notification.dto.PointChargedEvent
 import kotlinx.coroutines.flow.toList
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
@@ -28,10 +25,10 @@ import org.springframework.transaction.annotation.Transactional
 class UserService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
-    private val transactionalRepository: TransactionRepository,
     private val securityHolder: SecurityHolder,
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val objectMapper: ObjectMapper,
+    private val transactionRepository: TransactionRepository,
 ) {
     suspend fun getUsers(
         name: String?,
@@ -82,10 +79,10 @@ class UserService(
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    suspend fun chargeUserPoint(request: ChargeUserPointRequest) {
-        val user = userRepository.findById(request.userId)
+    suspend fun chargeUserPoint(userId: Long, request: ChargeUserPointRequest) {
+        val user = userRepository.findById(userId)
             ?: throw CustomException(UserError.USER_NOT_FOUND)
-        val adminId = securityHolder.getUserId()
+        val adminId = securityHolder.getAdminId()
 
         val amount = request.amount
         val balanceAfter = user.balance + amount
@@ -101,7 +98,7 @@ class UserService(
             balance = balanceAfter
         ))
 
-        val event = PointChargedEvent(
+        val event = PointChargedEventDto(
             userId = user.id!!,
             amount = amount,
             balanceAfter = balanceAfter

@@ -8,9 +8,6 @@ spring:
       max-size: 30
       max-idle-time: 30m
 
-  kafka:
-    bootstrap-servers: localhost:9092
-
 infra:
   jwt:
     secret: bc9309a792d01d4266f3ab235b91baa64be8478aaaa43703b55feaac35792620e0a7cde630930397af2d68874c3e0bfa7db4640e14d88bfbaf15eb23514be2a1

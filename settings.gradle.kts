@@ -20,5 +20,6 @@ include(
     "order-domain",
     "transaction-domain",
     "payment-domain",
-    "kiosk-domain"
+    "kiosk-domain",
+    "notice-domain",
 )

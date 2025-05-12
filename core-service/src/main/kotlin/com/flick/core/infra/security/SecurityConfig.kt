@@ -58,9 +58,16 @@ class SecurityConfig {
             .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
             .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
-            .pathMatchers(HttpMethod.GET, "/users/me/balance").hasRole(STUDENT)
+            .pathMatchers(HttpMethod.GET, "/users/me/balance").authenticated()
 
-            .pathMatchers(HttpMethod.POST, "/payments/requests/confirm").hasRole(STUDENT)
+            .pathMatchers(HttpMethod.POST, "/payments/requests/confirm").authenticated()
+
+            .pathMatchers(HttpMethod.GET, "/notices").authenticated()
+
+            .pathMatchers(HttpMethod.GET, "/booths").authenticated()
+
+            .pathMatchers(HttpMethod.GET, "/transactions/my").authenticated()
+            .pathMatchers(HttpMethod.GET, "/transactions/{transactionId}").authenticated()
 
             .anyExchange().authenticated()
         }

@@ -11,7 +11,7 @@ data class TransactionDetailResponse(
     val memo: String?,
     val createdAt: LocalDateTime,
     val booth: Booth,
-    val items: Flow<OrderItem>,
+    val items: List<OrderItem>,
 ) {
     data class Booth(
         val id: Long,

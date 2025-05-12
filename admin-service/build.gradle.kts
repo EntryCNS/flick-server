@@ -11,9 +11,8 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":booth-domain"))
     implementation(project(":user-domain"))
-    implementation(project(":core-service"))
     implementation(project(":transaction-domain"))
-    implementation(project(":notification-service"))
+    implementation(project(":notification-domain"))
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -23,6 +22,8 @@ dependencies {
     implementation("org.springframework.kafka:spring-kafka")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("org.postgresql:r2dbc-postgresql")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.6")
 
     // Kotlin
     implementation("org.jetbrains.kotlin:kotlin-reflect")

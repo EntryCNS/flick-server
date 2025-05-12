@@ -15,6 +15,7 @@ import com.flick.domain.payment.repository.ProductRepository
 import com.flick.domain.transaction.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 
 @Service
@@ -88,7 +89,7 @@ class TransactionService(
                     price = it.price,
                     quantity = it.quantity,
                 )
-            },
+            }.toList(),
             memo = transaction.memo,
             createdAt = transaction.createdAt,
         )
