@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":booth-domain"))
     implementation(project(":user-domain"))
+    implementation(project(":transaction-domain"))
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
