@@ -7,7 +7,7 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import java.time.LocalDate
 
 interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Long> {
-    fun findByUserIdOrderByCreatedAtDesc(userId: Long): Flow<TransactionEntity>
+    fun findAllByUserIdOrderByCreatedAtDesc(userId: Long): Flow<TransactionEntity>
 
     @Query("""
         SELECT t.* FROM transactions t
