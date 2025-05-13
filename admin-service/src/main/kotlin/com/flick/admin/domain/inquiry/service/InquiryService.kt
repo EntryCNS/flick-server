@@ -10,16 +10,19 @@ import com.flick.domain.inquiry.repository.InquiryRepository
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class InquiryService(
-    private val inquiryRepository: InquiryRepository
+    private val inquiryRepository: InquiryRepository,
+    private val transactionalOperator: TransactionalOperator
 ) {
     suspend fun getInquiries(
         category: InquiryCategory? = null,
         page: Int,
         size: Int,
-    ): PageResponse<InquiryResponse> {
+    ): PageResponse<InquiryResponse> = transactionalOperator.executeAndAwait {
         val offset = (page - 1).coerceAtLeast(0) * size
         val (inquiries, total) = when (category) {
             null -> Pair(
@@ -32,7 +35,7 @@ class InquiryService(
             )
         }
 
-        return PageResponse(
+        PageResponse(
             content = inquiries.map { inquiry ->
                 InquiryResponse(
                     id = inquiry.id!!,
@@ -50,7 +53,7 @@ class InquiryService(
         )
     }
 
-    suspend fun getInquiry(inquiryId: Long): InquiryDetailResponse =
+    suspend fun getInquiry(inquiryId: Long): InquiryDetailResponse = transactionalOperator.executeAndAwait {
         (inquiryRepository.findById(inquiryId) ?: throw CustomException(InquiryError.INQUIRY_NOT_FOUND))
             .let { inquiry ->
                 InquiryDetailResponse(
@@ -63,4 +66,5 @@ class InquiryService(
                     updatedAt = inquiry.updatedAt
                 )
             }
+    }
 }
