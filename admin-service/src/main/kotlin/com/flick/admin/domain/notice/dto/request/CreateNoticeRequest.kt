@@ -1,4 +1,6 @@
 package com.flick.admin.domain.notice.dto.request
 
-class CreateNoticeRequest {
-}
+data class CreateNoticeRequest(
+    val title: String,
+    val content: String
+)

@@ -13,6 +13,7 @@ dependencies {
     implementation(project(":user-domain"))
     implementation(project(":transaction-domain"))
     implementation(project(":notification-domain"))
+    implementation(project(":notice-domain"))
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
