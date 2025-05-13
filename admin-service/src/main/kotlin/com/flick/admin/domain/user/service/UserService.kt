@@ -10,11 +10,9 @@ import com.flick.common.error.CustomException
 import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.enums.TransactionType
 import com.flick.domain.transaction.repository.TransactionRepository
-import com.flick.domain.user.entity.UserRoleEntity
 import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
-import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -24,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val userRoleRepository: UserRoleRepository,
     private val securityHolder: SecurityHolder,
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val objectMapper: ObjectMapper,
@@ -39,71 +36,59 @@ class UserService(
         size: Int,
     ): PageResponse<UserResponse> {
         val offset = (page - 1).coerceAtLeast(0) * size
-
-        val userList = userRepository.findFiltered(name, grade, room, role, size, offset).toList()
-
-        val userIds = userList.mapNotNull { it.id }
-
-        val userRolesMap: Map<Long, List<UserRoleEntity>> =
-            userRoleRepository.findAllByUserIdIn(userIds)
-                .toList()
-                .groupBy { it.userId }
-
-        val userResponses = userList.map { user ->
-            val roles = userRolesMap[user.id]
-            val isTeacher = roles!!.any { it.role == UserRoleType.TEACHER }
-
-            UserResponse(
-                id = user.id!!,
-                name = user.name,
-                role = if (isTeacher) UserRoleType.TEACHER else UserRoleType.STUDENT,
-                grade = user.grade,
-                room = user.room,
-                number = user.number,
-                balance = user.balance,
-            )
-        }
-
-        val total = userRepository.countFiltered(name, grade, room, role)
-        val totalPages = ((total / size) + if (total % size > 0) 1 else 0).toInt()
-        val last = page * size >= total
+        val users = userRepository.findAllByFilters(name, grade, room, role, size, offset).toList()
 
         return PageResponse(
-            content = userResponses,
+            content = users.map { user ->
+                UserResponse(
+                    id = user.id,
+                    name = user.name,
+                    role = if (UserRoleType.TEACHER in user.roles)
+                        UserRoleType.TEACHER else UserRoleType.STUDENT,
+                    grade = user.grade,
+                    room = user.room,
+                    number = user.number,
+                    balance = user.balance
+                )
+            },
             page = page,
             size = size,
-            totalElements = total,
-            totalPages = totalPages,
-            last = last,
+            totalElements = users.firstOrNull()?.totalCount ?: 0,
+            totalPages = ((users.firstOrNull()?.totalCount ?: 0) + size - 1) / size,
+            last = users.isEmpty() || users.last().rowNum >= (users.firstOrNull()?.totalCount ?: 0)
         )
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     suspend fun chargeUserPoint(userId: Long, request: ChargeUserPointRequest) {
-        val user = userRepository.findById(userId)
+        val user = userRepository.findOneByIdForUpdate(userId)
             ?: throw CustomException(UserError.USER_NOT_FOUND)
-        val adminId = securityHolder.getAdminId()
 
-        val amount = request.amount
-        val balanceAfter = user.balance + amount
+        val balanceAfter = user.balance + request.amount
 
-        transactionRepository.save(TransactionEntity(
-            userId = user.id!!,
-            type = TransactionType.CHARGE,
-            amount = amount,
-            balanceAfter = balanceAfter,
-            adminId = adminId
-        ))
-        userRepository.save(user.copy(
-            balance = balanceAfter
-        ))
-
-        val event = PointChargedEventDto(
-            userId = user.id!!,
-            amount = amount,
-            balanceAfter = balanceAfter
-        )
-        val eventJson = objectMapper.writeValueAsString(event)
-        kafkaTemplate.send("point-charged", eventJson)
+        userRepository.save(user.copy(balance = balanceAfter))
+            .also { savedUser ->
+                transactionRepository.save(
+                    TransactionEntity(
+                        userId = savedUser.id!!,
+                        type = TransactionType.CHARGE,
+                        amount = request.amount,
+                        balanceAfter = balanceAfter,
+                        adminId = securityHolder.getAdminId()
+                    )
+                )
+            }
+            .also { savedUser ->
+                kafkaTemplate.send(
+                    "point-charged",
+                    objectMapper.writeValueAsString(
+                        PointChargedEventDto(
+                            userId = savedUser.id!!,
+                            amount = request.amount,
+                            balanceAfter = balanceAfter
+                        )
+                    )
+                )
+            }
     }
 }
