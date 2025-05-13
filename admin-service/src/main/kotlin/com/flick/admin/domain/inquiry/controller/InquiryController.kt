@@ -14,8 +14,8 @@ class InquiryController(private val inquiryService: InquiryService) {
     @GetMapping
     suspend fun getInquiries(
         @RequestParam(required = false) category: InquiryCategory?,
-        @RequestParam page: Int = 1,
-        @RequestParam size: Int = 20,
+        @RequestParam(required = false, defaultValue = "1") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
     ) = inquiryService.getInquiries(category, page, size)
 
     @GetMapping("/{inquiryId}")

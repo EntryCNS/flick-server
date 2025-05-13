@@ -3,7 +3,7 @@ package com.flick.admin.domain.inquiry.dto.response
 import com.flick.domain.inquiry.enums.InquiryCategory
 import java.time.LocalDateTime
 
-data class InquiryInfoResponse(
+data class InquiryDetailResponse(
     val id: Long,
     val category: InquiryCategory,
     val title: String,
