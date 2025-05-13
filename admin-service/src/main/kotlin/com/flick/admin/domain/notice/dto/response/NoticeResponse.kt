@@ -1,4 +1,4 @@
-package com.flick.core.domain.notice.dto.response
+package com.flick.admin.domain.notice.dto.response
 
 import java.time.LocalDateTime
 
@@ -7,5 +7,10 @@ data class NoticeResponse(
     val title: String,
     val content: String,
     val isPinned: Boolean,
+    val author: Author,
     val createdAt: LocalDateTime,
-)
+) {
+    data class Author(
+        val name: String
+    )
+}
