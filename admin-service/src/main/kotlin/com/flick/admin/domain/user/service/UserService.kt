@@ -14,6 +14,8 @@ import com.flick.domain.transaction.repository.TransactionRepository
 import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
+import com.flick.domain.user.repository.UserRoleRepository
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
@@ -27,6 +29,7 @@ class UserService(
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val objectMapper: ObjectMapper,
     private val transactionRepository: TransactionRepository,
+    private val userRoleRepository: UserRoleRepository,
 ) {
     suspend fun getUsers(
         name: String?,
