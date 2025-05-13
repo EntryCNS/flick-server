@@ -6,10 +6,11 @@ import com.flick.admin.domain.notice.dto.request.CreateNoticeRequest
 import com.flick.admin.domain.notice.dto.request.UpdateNoticeRequest
 import com.flick.admin.infra.security.SecurityHolder
 import com.flick.common.error.CustomException
-import com.flick.core.domain.notice.dto.response.NoticeResponse
+import com.flick.admin.domain.notice.dto.response.NoticeResponse
 import com.flick.domain.notice.entity.NoticeEntity
 import com.flick.domain.notice.error.NoticeError
 import com.flick.domain.notice.repository.NoticeRepository
+import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,8 +32,11 @@ class NoticeService(
             NoticeResponse(
                 id = it.id!!,
                 title = it.title,
-                isPinned = it.isPinned,
                 content = it.content,
+                isPinned = it.isPinned,
+                author = NoticeResponse.Author(
+                    name = getAuthor(it.authorId).name
+                ),
                 createdAt = it.createdAt,
             )
         }
@@ -45,8 +49,11 @@ class NoticeService(
         return NoticeResponse(
             id = notice.id!!,
             title = notice.title,
-            isPinned = notice.isPinned,
             content = notice.content,
+            isPinned = notice.isPinned,
+            author = NoticeResponse.Author(
+                name = getAuthor(notice.authorId).name
+            ),
             createdAt = notice.createdAt,
         )
     }
@@ -93,6 +100,8 @@ class NoticeService(
 
         noticeRepository.delete(notice)
     }
+
+    private suspend fun getAuthor(authorId: Long) = userRepository.findById(authorId) ?: throw CustomException(UserError.USER_NOT_FOUND)
 
     private suspend fun broadcastNotice(notice: NoticeEntity) {
         val users = userRepository.findAll()
