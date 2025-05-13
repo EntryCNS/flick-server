@@ -9,44 +9,55 @@ import org.springframework.data.repository.query.Param
 
 interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
     suspend fun findByDAuthId(dAuthId: String): UserEntity?
+
     suspend fun findByGradeAndRoomAndNumber(
         grade: Int,
         room: Int,
         number: Int,
     ): UserEntity?
+
     @Query("""
-        SELECT u.* FROM users u
-        JOIN user_roles r ON r.user_id = u.id
-        WHERE (:name IS NULL OR u.name ILIKE '%' || :name || '%')
-          AND (:grade IS NULL OR u.grade = :grade)
-          AND (:room IS NULL OR u.room = :room)
-          AND (:role IS NULL OR r.role = :role)
-        GROUP BY u.id
-        ORDER BY u.name ASC
-        LIMIT :limit OFFSET :offset
+        WITH RankedUsers AS (
+            SELECT 
+                u.*,
+                array_agg(DISTINCT r.role) as roles,
+                COUNT(*) OVER() as total_count,
+                ROW_NUMBER() OVER (ORDER BY u.name ASC) as row_num
+            FROM users u
+            LEFT JOIN user_roles r ON r.user_id = u.id
+            WHERE (:name IS NULL OR u.name ILIKE concat('%', :name, '%'))
+              AND (:grade IS NULL OR u.grade = :grade)
+              AND (:room IS NULL OR u.room = :room)
+              AND (:role IS NULL OR r.role = :role)
+            GROUP BY u.id
+        )
+        SELECT *
+        FROM RankedUsers
+        WHERE row_num > :offset
+        AND row_num <= (:offset + :limit)
     """)
-    fun findFiltered(
+    fun findAllByFilters(
         @Param("name") name: String?,
         @Param("grade") grade: Int?,
         @Param("room") room: Int?,
         @Param("role") role: UserRoleType?,
         @Param("limit") limit: Int,
         @Param("offset") offset: Int
-    ): Flow<UserEntity>
-    @Query("""
-        SELECT COUNT(DISTINCT u.id) FROM users u
-        JOIN user_roles r ON r.user_id = u.id
-        WHERE (:name IS NULL OR u.name ILIKE '%' || :name || '%')
-          AND (:grade IS NULL OR u.grade = :grade)
-          AND (:room IS NULL OR u.room = :room)
-          AND (:role IS NULL OR r.role = :role)
-    """)
-    suspend fun countFiltered(
-        @Param("name") name: String?,
-        @Param("grade") grade: Int?,
-        @Param("room") room: Int?,
-        @Param("role") role: UserRoleType?
-    ): Long
-    @Query("SELECT * FROM users WHERE id = :id FOR UPDATE")
-    suspend fun findByIdForUpdate(@Param("id") id: Long): UserEntity?
+    ): Flow<UserWithRoles>
+
+    @Query("SELECT * FROM users WHERE id = :id FOR UPDATE SKIP LOCKED")
+    suspend fun findOneByIdForUpdate(@Param("id") id: Long): UserEntity?
 }
+
+data class UserWithRoles(
+    val id: Long,
+    val name: String,
+    val email: String?,
+    val grade: Int?,
+    val room: Int?,
+    val number: Int?,
+    val balance: Long,
+    val roles: List<UserRoleType>,
+    val totalCount: Long,
+    val rowNum: Long
+)
