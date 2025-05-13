@@ -55,7 +55,7 @@ class AuthService(
         )
     }
 
-    suspend fun refresh(request: RefreshRequest): JwtPayload {
+    fun refresh(request: RefreshRequest): JwtPayload {
         if (jwtProvider.getType(request.refreshToken) != JwtType.REFRESH) {
             throw CustomException(JwtError.INVALID_TOKEN_TYPE)
         }

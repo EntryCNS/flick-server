@@ -1,11 +1,7 @@
 package com.flick.admin.domain.transaction.controller
 
-import com.flick.admin.domain.transaction.dto.response.TransactionDetailResponse
-import com.flick.admin.domain.transaction.dto.response.TransactionResponse
 import com.flick.admin.domain.transaction.service.TransactionService
-import com.flick.common.dto.Page
 import com.flick.domain.transaction.enums.TransactionType
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
