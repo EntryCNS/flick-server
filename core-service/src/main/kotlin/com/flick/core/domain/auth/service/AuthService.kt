@@ -11,7 +11,8 @@ import com.flick.domain.user.enums.UserRoleType
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -19,44 +20,58 @@ class AuthService(
     private val dAuthClient: DAuthClient,
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
+    private val transactionalOperator: TransactionalOperator
 ) {
-    @Transactional
     suspend fun login(request: LoginRequest): JwtPayload {
         val token = dAuthClient.login(request.id, request.password)
         val dAuthUser = dAuthClient.getUser(token.accessToken)
 
-        val user = userRepository.findByDAuthId(dAuthUser.uniqueId) ?: run {
-            val newUser = userRepository.save(
-                UserEntity(
-                    dAuthId = dAuthUser.uniqueId,
-                    name = dAuthUser.name,
-                    email = dAuthUser.email,
-                    grade = dAuthUser.grade,
-                    room = dAuthUser.room,
-                    number = dAuthUser.number,
-                    profileUrl = dAuthUser.profileImage
-                )
-            )
+        val user = transactionalOperator.executeAndAwait {
+            val existingUser = userRepository.findByDAuthId(dAuthUser.uniqueId)
 
-            val role = if (dAuthUser.role == "TEACHER") UserRoleType.TEACHER else UserRoleType.STUDENT
-            userRoleRepository.save(
-                UserRoleEntity(
-                    userId = newUser.id!!,
-                    role = role
+            if (existingUser == null) {
+                val newUser = userRepository.save(
+                    UserEntity(
+                        dAuthId = dAuthUser.uniqueId,
+                        name = dAuthUser.name,
+                        email = dAuthUser.email,
+                        grade = dAuthUser.grade,
+                        room = dAuthUser.room,
+                        number = dAuthUser.number,
+                        profileUrl = dAuthUser.profileImage,
+                        lastLoginAt = LocalDateTime.now()
+                    )
                 )
-            )
 
-            newUser
+                userRoleRepository.save(
+                    UserRoleEntity(
+                        userId = newUser.id!!,
+                        role = if (dAuthUser.role == "TEACHER") UserRoleType.TEACHER else UserRoleType.STUDENT
+                    )
+                )
+
+                newUser
+            } else {
+                userRepository.save(
+                    existingUser.copy(
+                        name = dAuthUser.name,
+                        email = dAuthUser.email,
+                        grade = dAuthUser.grade,
+                        room = dAuthUser.room,
+                        number = dAuthUser.number,
+                        profileUrl = dAuthUser.profileImage,
+                        lastLoginAt = LocalDateTime.now()
+                    )
+                )
+            }
         }
 
-        val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
-        return jwtProvider.generateToken(updatedUser.id!!)
+        return jwtProvider.generateToken(user.id!!)
     }
 
     fun refresh(request: RefreshRequest): JwtPayload {
         val userId = jwtProvider.getUserId(request.refreshToken)
-
         return jwtProvider.generateToken(userId)
     }
 }

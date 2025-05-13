@@ -12,6 +12,8 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.firstOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -20,24 +22,29 @@ class AuthService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
     private val jwtProvider: JwtProvider,
+    private val transactionalOperator: TransactionalOperator
 ) {
     suspend fun login(request: LoginRequest): JwtPayload {
         val token = dAuthClient.login(request.id, request.password)
         val dAuthUser = dAuthClient.getUser(token.accessToken)
-        val user = userRepository.findByDAuthId(dAuthUser.uniqueId) ?: throw CustomException(UserError.USER_NOT_FOUND)
-        val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
-            .firstOrNull { it.role == UserRoleType.ADMIN } != null
 
-        if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
+        return transactionalOperator.executeAndAwait {
+            val user = userRepository.findByDAuthId(dAuthUser.uniqueId)
+                ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-        val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
+            val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
+                .firstOrNull { it.role == UserRoleType.ADMIN } != null
 
-        return jwtProvider.generateToken(updatedUser.id!!)
+            if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
+
+            val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
+
+            jwtProvider.generateToken(updatedUser.id!!)
+        }
     }
 
-    fun refresh(request: RefreshRequest): JwtPayload {
+    suspend fun refresh(request: RefreshRequest): JwtPayload {
         val userId = jwtProvider.getUserId(request.refreshToken)
-
         return jwtProvider.generateToken(userId)
     }
 }

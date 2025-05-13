@@ -20,6 +20,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class PaymentService(
@@ -30,10 +32,11 @@ class PaymentService(
     private val objectMapper: ObjectMapper,
     private val securityHolder: SecurityHolder,
     private val userRepository: UserRepository,
+    private val transactionalOperator: TransactionalOperator
 ) {
     private val log = logger()
 
-    suspend fun createQrPayment(request: CreateQrPaymentRequest): CreateQrPaymentResponse {
+    suspend fun createQrPayment(request: CreateQrPaymentRequest): CreateQrPaymentResponse = transactionalOperator.executeAndAwait {
         val order = getPendingOrder(request.orderId)
         val token = generatePaymentToken()
 
@@ -45,13 +48,13 @@ class PaymentService(
             )
         )
 
-        return CreateQrPaymentResponse(
+        CreateQrPaymentResponse(
             id = paymentRequest.id!!,
             token = token
         )
     }
 
-    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse {
+    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse = transactionalOperator.executeAndAwait {
         val order = getPendingOrder(request.orderId)
         val token = generatePaymentToken()
 
@@ -70,27 +73,26 @@ class PaymentService(
             grade = request.studentId.first().digitToInt(),
             room = request.studentId[1].digitToInt(),
             number = request.studentId.substring(2).toInt()
-        )
-            ?: throw CustomException(UserError.USER_NOT_FOUND)
+        ) ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-        sendPaymentRequestNotification(
-            userId = user.id!!,
-            orderId = order.id!!,
-            boothName = booth.name,
-            totalAmount = order.totalAmount,
-            token = token
-        )
-
-        return CreateStudentIdPaymentResponse(
-            id = paymentRequest.id!!,
-        )
+        CreateStudentIdPaymentResponse(id = paymentRequest.id!!).also {
+            sendPaymentRequestNotification(
+                userId = user.id!!,
+                orderId = order.id!!,
+                boothName = booth.name,
+                totalAmount = order.totalAmount,
+                token = token
+            )
+        }
     }
 
     private suspend fun getPendingOrder(orderId: Long): OrderEntity {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
-        if (order.status != OrderStatus.PENDING) throw CustomException(OrderError.ORDER_NOT_PENDING)
+        if (order.status != OrderStatus.PENDING) {
+            throw CustomException(OrderError.ORDER_NOT_PENDING)
+        }
 
         return order
     }
@@ -114,11 +116,9 @@ class PaymentService(
 
         try {
             val eventJson = objectMapper.writeValueAsString(event)
-
             withContext(Dispatchers.IO) {
                 kafkaTemplate.send("payment-request", eventJson)
             }
-
             log.info("Payment request notification sent for order $orderId")
         } catch (e: Exception) {
             log.error("Failed to send payment request notification for order $orderId", e)

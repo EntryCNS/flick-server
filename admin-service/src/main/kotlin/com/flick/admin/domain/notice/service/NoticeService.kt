@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class NoticeService(
@@ -23,7 +25,8 @@ class NoticeService(
     private val securityHolder: SecurityHolder,
     private val objectMapper: ObjectMapper,
     private val userRepository: UserRepository,
-    private val kafkaTemplate: KafkaTemplate<Any, Any>
+    private val kafkaTemplate: KafkaTemplate<Any, Any>,
+    private val transactionalOperator: TransactionalOperator
 ) {
     suspend fun getNotices(): Flow<NoticeResponse> {
         val notices = noticeRepository.findAll()
@@ -60,60 +63,67 @@ class NoticeService(
 
     suspend fun createNotice(request: CreateNoticeRequest) {
         val adminId = securityHolder.getAdminId()
-        val notice = noticeRepository.save(
-            NoticeEntity(
-                title = request.title,
-                content = request.content,
-                authorId = adminId,
-                isPinned = request.isPinned
+
+        val notice = transactionalOperator.executeAndAwait {
+            noticeRepository.save(
+                NoticeEntity(
+                    title = request.title,
+                    content = request.content,
+                    authorId = adminId,
+                    isPinned = request.isPinned
+                )
             )
-        )
+        }
 
         broadcastNotice(notice)
     }
 
     suspend fun updateNotice(noticeId: Long, request: UpdateNoticeRequest) {
         val adminId = securityHolder.getAdminId()
-        val notice = noticeRepository.findById(noticeId)
-            ?: throw CustomException(NoticeError.NOTICE_NOT_FOUND)
 
-        if (notice.authorId != adminId) {
-            throw CustomException(NoticeError.NOTICE_FORBIDDEN)
+        transactionalOperator.executeAndAwait {
+            val notice = noticeRepository.findById(noticeId)
+                ?: throw CustomException(NoticeError.NOTICE_NOT_FOUND)
+
+            if (notice.authorId != adminId) {
+                throw CustomException(NoticeError.NOTICE_FORBIDDEN)
+            }
+
+            noticeRepository.save(
+                notice.copy(
+                    title = request.title ?: notice.title,
+                    content = request.content ?: notice.content,
+                )
+            )
         }
-
-        val updatedNotice = notice.copy(
-            title = request.title ?: notice.title,
-            content = request.content ?: notice.content,
-        )
-
-        noticeRepository.save(updatedNotice)
     }
 
     suspend fun deleteNotice(noticeId: Long) {
         val adminId = securityHolder.getAdminId()
-        val notice = noticeRepository.findById(noticeId)
-            ?: throw CustomException(NoticeError.NOTICE_NOT_FOUND)
 
-        if (notice.authorId != adminId) {
-            throw CustomException(NoticeError.NOTICE_FORBIDDEN)
+        transactionalOperator.executeAndAwait {
+            val notice = noticeRepository.findById(noticeId)
+                ?: throw CustomException(NoticeError.NOTICE_NOT_FOUND)
+
+            if (notice.authorId != adminId) {
+                throw CustomException(NoticeError.NOTICE_FORBIDDEN)
+            }
+
+            noticeRepository.delete(notice)
         }
-
-        noticeRepository.delete(notice)
     }
 
-    private suspend fun getAuthor(authorId: Long) = userRepository.findById(authorId) ?: throw CustomException(UserError.USER_NOT_FOUND)
+    private suspend fun getAuthor(authorId: Long) =
+        userRepository.findById(authorId) ?: throw CustomException(UserError.USER_NOT_FOUND)
 
     private suspend fun broadcastNotice(notice: NoticeEntity) {
-        val users = userRepository.findAll()
-
-        users.collect {
+        userRepository.findAll().collect {
             val event = NoticeCreatedEvent(
                 id = notice.id!!,
                 userId = it.id!!,
                 title = notice.title,
             )
-            val eventJson = objectMapper.writeValueAsString(event)
-            kafkaTemplate.send("notice-created", eventJson)
+            kafkaTemplate.send("notice-created", objectMapper.writeValueAsString(event))
         }
     }
 }
