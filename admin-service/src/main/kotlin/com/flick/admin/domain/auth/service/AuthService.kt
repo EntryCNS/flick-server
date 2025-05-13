@@ -22,25 +22,21 @@ class AuthService(
     private val userRepository: UserRepository,
     private val userRoleRepository: UserRoleRepository,
     private val jwtProvider: JwtProvider,
-    private val transactionalOperator: TransactionalOperator
 ) {
     suspend fun login(request: LoginRequest): JwtPayload {
         val token = dAuthClient.login(request.id, request.password)
         val dAuthUser = dAuthClient.getUser(token.accessToken)
 
-        return transactionalOperator.executeAndAwait {
-            val user = userRepository.findByDAuthId(dAuthUser.uniqueId)
-                ?: throw CustomException(UserError.USER_NOT_FOUND)
+        val user = userRepository.findByDAuthId(dAuthUser.uniqueId)
+            ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-            val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
-                .firstOrNull { it.role == UserRoleType.ADMIN } != null
+        val isAdmin = userRoleRepository.findAllByUserId(user.id!!)
+            .firstOrNull { it.role == UserRoleType.ADMIN } != null
 
-            if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
+        if (!isAdmin) throw CustomException(UserError.PERMISSION_DENIED)
 
-            val updatedUser = userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
-
-            jwtProvider.generateToken(updatedUser.id!!)
-        }
+        userRepository.save(user.copy(lastLoginAt = LocalDateTime.now()))
+        return jwtProvider.generateToken(user.id!!)
     }
 
     fun refresh(request: RefreshRequest): JwtPayload {
