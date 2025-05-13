@@ -10,16 +10,17 @@ import com.flick.domain.payment.repository.OrderItemRepository
 import com.flick.domain.payment.repository.OrderRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class OrderService(
     private val orderRepository: OrderRepository,
     private val boothRepository: BoothRepository,
-    private val orderItemRepository: OrderItemRepository
+    private val orderItemRepository: OrderItemRepository,
+    private val transactionalOperator: TransactionalOperator
 ) {
-    @Transactional(readOnly = true)
-    suspend fun getOrder(orderId: Long): OrderResponse {
+    suspend fun getOrder(orderId: Long): OrderResponse = transactionalOperator.executeAndAwait {
         val order = orderRepository.findById(orderId)
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
@@ -30,7 +31,7 @@ class OrderService(
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
         val items = orderItemRepository.findAllByOrderId(order.id!!).toList()
 
-        return OrderResponse(
+        OrderResponse(
             id = order.id!!,
             booth = OrderResponse.OrderBoothResponse(
                 id = booth.id!!,

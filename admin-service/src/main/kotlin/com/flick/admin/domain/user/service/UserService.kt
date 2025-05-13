@@ -19,8 +19,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Isolation
-import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class UserService(
@@ -30,6 +30,7 @@ class UserService(
     private val objectMapper: ObjectMapper,
     private val transactionRepository: TransactionRepository,
     private val userRoleRepository: UserRoleRepository,
+    private val transactionalOperator: TransactionalOperator,
 ) {
     suspend fun getUsers(
         name: String?,
@@ -38,11 +39,11 @@ class UserService(
         role: UserRoleType?,
         page: Int,
         size: Int,
-    ): PageResponse<UserResponse> {
+    ): PageResponse<UserResponse> = transactionalOperator.executeAndAwait {
         val offset = (page - 1).coerceAtLeast(0) * size
         val users = userRepository.findAllByFilters(name, grade, room, role, size, offset).toList()
 
-        return PageResponse(
+        PageResponse(
             content = users.map { user ->
                 UserResponse(
                     id = user.id,
@@ -63,7 +64,10 @@ class UserService(
         )
     }
 
-    suspend fun getUser(userId: Long) = userRepository.findById(userId)?.let { user ->
+    suspend fun getUser(userId: Long): UserInfoResponse = transactionalOperator.executeAndAwait {
+        val user = userRepository.findById(userId)
+            ?: throw CustomException(UserError.USER_NOT_FOUND)
+
         val isTeacher = userRoleRepository.findAllByUserId(user.id!!)
             .firstOrNull { it.role == UserRoleType.TEACHER } != null
 
@@ -81,38 +85,39 @@ class UserService(
             createdAt = user.createdAt,
             updatedAt = user.updatedAt,
         )
-    } ?: throw CustomException(UserError.USER_NOT_FOUND)
+    }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     suspend fun chargeUserPoint(userId: Long, request: ChargeUserPointRequest) {
-        val user = userRepository.findOneByIdForUpdate(userId)
-            ?: throw CustomException(UserError.USER_NOT_FOUND)
+        val savedUser = transactionalOperator.executeAndAwait {
+            val user = userRepository.findOneByIdForUpdate(userId)
+                ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-        val balanceAfter = user.balance + request.amount
+            val balanceAfter = user.balance + request.amount
 
-        userRepository.save(user.copy(balance = balanceAfter))
-            .also { savedUser ->
-                transactionRepository.save(
-                    TransactionEntity(
-                        userId = savedUser.id!!,
-                        type = TransactionType.CHARGE,
-                        amount = request.amount,
-                        balanceAfter = balanceAfter,
-                        adminId = securityHolder.getAdminId()
-                    )
+            val savedUser = userRepository.save(user.copy(balance = balanceAfter))
+
+            transactionRepository.save(
+                TransactionEntity(
+                    userId = savedUser.id!!,
+                    type = TransactionType.CHARGE,
+                    amount = request.amount,
+                    balanceAfter = balanceAfter,
+                    adminId = securityHolder.getAdminId()
                 )
-            }
-            .also { savedUser ->
-                kafkaTemplate.send(
-                    "point-charged",
-                    objectMapper.writeValueAsString(
-                        PointChargedEventDto(
-                            userId = savedUser.id!!,
-                            amount = request.amount,
-                            balanceAfter = balanceAfter
-                        )
-                    )
+            )
+
+            savedUser
+        }
+
+        kafkaTemplate.send(
+            "point-charged",
+            objectMapper.writeValueAsString(
+                PointChargedEventDto(
+                    userId = savedUser.id!!,
+                    amount = request.amount,
+                    balanceAfter = savedUser.balance,
                 )
-            }
+            )
+        )
     }
 }
