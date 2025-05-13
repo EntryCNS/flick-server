@@ -3,6 +3,7 @@ package com.flick.admin.domain.user.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.flick.admin.domain.user.dto.PointChargedEventDto
 import com.flick.admin.domain.user.dto.request.ChargeUserPointRequest
+import com.flick.admin.domain.user.dto.response.UserInfoResponse
 import com.flick.admin.domain.user.dto.response.UserResponse
 import com.flick.admin.infra.security.SecurityHolder
 import com.flick.common.dto.PageResponse
@@ -58,6 +59,26 @@ class UserService(
             last = users.isEmpty() || users.last().rowNum >= (users.firstOrNull()?.totalCount ?: 0)
         )
     }
+
+    suspend fun getUser(userId: Long) = userRepository.findById(userId)?.let { user ->
+        val isTeacher = userRoleRepository.findAllByUserId(user.id!!)
+            .firstOrNull { it.role == UserRoleType.TEACHER } != null
+
+        UserInfoResponse(
+            id = user.id!!,
+            name = user.name,
+            email = user.email,
+            role = if (isTeacher) UserRoleType.TEACHER else UserRoleType.STUDENT,
+            grade = user.grade,
+            room = user.room,
+            number = user.number,
+            balance = user.balance,
+            profileUrl = user.profileUrl,
+            lastLoginAt = user.lastLoginAt,
+            createdAt = user.createdAt,
+            updatedAt = user.updatedAt,
+        )
+    } ?: throw CustomException(UserError.USER_NOT_FOUND)
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
     suspend fun chargeUserPoint(userId: Long, request: ChargeUserPointRequest) {

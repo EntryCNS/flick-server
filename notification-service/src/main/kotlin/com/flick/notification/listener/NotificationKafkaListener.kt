@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.flick.common.utils.logger
 import com.flick.domain.notification.enums.NotificationType
+import com.flick.notification.dto.NoticeCreatedEvent
 import com.flick.notification.dto.OrderCompletedEvent
 import com.flick.notification.dto.PaymentRequestEvent
 import com.flick.notification.dto.PointChargedEvent
@@ -89,6 +90,31 @@ class NotificationKafkaListener(
             }
         } catch (e: Exception) {
             log.error("Failed to process point-charged: $message", e)
+        }
+    }
+
+    @KafkaListener(topics = ["notice-created"], groupId = "notification-group")
+    fun handleNoticeCreated(message: String) {
+        log.info("Received notice created event: $message")
+
+        try {
+            val event = objectMapper.readValue<NoticeCreatedEvent>(message)
+
+            runBlocking {
+                notificationService.createNotificationAndSend(
+                    userId = event.userId,
+                    type = NotificationType.NOTICE_CREATED,
+                    title = "새 공지사항",
+                    body = event.title,
+                    data = objectMapper.writeValueAsString(
+                        mapOf(
+                            "id" to event.id
+                        )
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            log.error("Failed to process notice-created: $message", e)
         }
     }
 }
