@@ -14,9 +14,12 @@ class UserController(private val userService: UserService) {
         @RequestParam(required = false) grade: Int?,
         @RequestParam(required = false) room: Int?,
         @RequestParam(required = false) role: UserRoleType?,
-        @RequestParam page: Int = 1,
-        @RequestParam size: Int = 20,
+        @RequestParam(required = false, defaultValue = "1") page: Int,
+        @RequestParam(required = false, defaultValue = "20") size: Int,
     ) = userService.getUsers(name, grade, room, role, page, size)
+
+    @GetMapping("/{userId}")
+    suspend fun getUser(@PathVariable userId: Long) = userService.getUser(userId)
 
     @PostMapping("/{userId}/charge")
     suspend fun chargeUserPoint(@PathVariable userId: Long, @RequestBody request: ChargeUserPointRequest) = userService.chargeUserPoint(userId, request)
