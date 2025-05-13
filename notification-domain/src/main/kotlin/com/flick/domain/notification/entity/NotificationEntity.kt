@@ -25,7 +25,7 @@ data class NotificationEntity(
     val body: String,
 
     @Column("data")
-    val data: String? = null,
+    val data: String? = null, // JSONB 데이터를 String으로 저장하고 변환해서 사용
 
     @Column("is_read")
     val isRead: Boolean = false,

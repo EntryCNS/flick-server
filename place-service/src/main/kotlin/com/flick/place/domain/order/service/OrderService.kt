@@ -18,8 +18,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -27,30 +25,30 @@ class OrderService(
     private val orderRepository: OrderRepository,
     private val securityHolder: SecurityHolder,
     private val productRepository: ProductRepository,
-    private val orderItemRepository: OrderItemRepository,
-    private val transactionalOperator: TransactionalOperator
+    private val orderItemRepository: OrderItemRepository
 ) {
-    suspend fun getOrders(): Flow<OrderResponse> = transactionalOperator.executeAndAwait {
+    suspend fun getOrders(): Flow<OrderResponse> {
         val boothId = securityHolder.getBoothId()
-        orderRepository.findAllByBoothId(boothId).map { it.toResponse() }
+        val orders = orderRepository.findAllByBoothId(boothId)
+
+        return orders.map { it.toResponse() }
     }
 
-    suspend fun getOrder(orderId: Long): OrderResponse = transactionalOperator.executeAndAwait {
+    suspend fun getOrder(orderId: Long): OrderResponse {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
-        order.toResponse()
+        return order.toResponse()
     }
 
-    suspend fun createOrder(request: CreateOrderRequest): OrderResponse = transactionalOperator.executeAndAwait {
+    suspend fun createOrder(request: CreateOrderRequest): OrderResponse {
         val boothId = securityHolder.getBoothId()
 
         val productIds = request.items.map { it.productId }
         val products = productRepository.findAllById(productIds).toList()
 
-        if (products.size != request.items.distinct().size) {
+        if (products.size != request.items.distinct().size)
             throw CustomException(ProductError.PRODUCT_NOT_FOUND)
-        }
 
         val productMap = products.associateBy { it.id!! }
 
@@ -58,6 +56,7 @@ class OrderService(
             val product = productMap[item.productId] ?: throw CustomException(ProductError.PRODUCT_NOT_FOUND)
 
             if (product.boothId != boothId) {
+                println("Product ${product.id} does not belong to booth $boothId")
                 throw CustomException(ProductError.PRODUCT_NOT_FOUND)
             }
 
@@ -99,23 +98,22 @@ class OrderService(
 
         orderItemRepository.saveAll(orderItems).collect()
 
-        savedOrder.toResponse()
+        return savedOrder.toResponse()
     }
 
-    suspend fun cancelOrder(orderId: Long) = transactionalOperator.executeAndAwait {
+    suspend fun cancelOrder(orderId: Long) {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
-        if (order.status != OrderStatus.PENDING) {
+        if (order.status != OrderStatus.PENDING)
             throw CustomException(OrderError.ORDER_NOT_PENDING)
-        }
 
         orderRepository.save(order.copy(
             status = OrderStatus.CANCELED,
         ))
     }
 
-    private fun OrderEntity.toResponse() = OrderResponse(
+    fun OrderEntity.toResponse() = OrderResponse(
         id = id!!,
         userId = userId,
         boothOrderNumber = boothOrderNumber,

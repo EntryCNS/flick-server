@@ -14,53 +14,47 @@ import com.flick.place.infra.security.JwtProvider
 import com.flick.place.infra.security.JwtType
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class AuthService(
     private val boothRepository: BoothRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
-    private val transactionalOperator: TransactionalOperator
 ) {
-    suspend fun login(request: LoginRequest): JwtPayload = transactionalOperator.executeAndAwait {
+    suspend fun login(request: LoginRequest): JwtPayload {
         val booth = boothRepository.findByUsername(request.username)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
-        if (!passwordEncoder.matches(request.password, booth.passwordHash)) {
+        if (!passwordEncoder.matches(request.password, booth.passwordHash))
             throw CustomException(BoothError.BOOTH_PASSWORD_NOT_MATCH)
-        }
 
-        when (booth.status) {
-            BoothStatus.PENDING -> throw CustomException(BoothError.BOOTH_NOT_APPROVED)
-            BoothStatus.REJECTED -> throw CustomException(BoothError.BOOTH_REJECTED)
-            BoothStatus.INACTIVE -> throw CustomException(BoothError.BOOTH_INACTIVE)
-            else -> jwtProvider.generateBoothToken(booth.id!!)
-        }
+        if (booth.status == BoothStatus.PENDING)
+            throw CustomException(BoothError.BOOTH_NOT_APPROVED)
+        if (booth.status == BoothStatus.REJECTED)
+            throw CustomException(BoothError.BOOTH_REJECTED)
+        if (booth.status == BoothStatus.INACTIVE)
+            throw CustomException(BoothError.BOOTH_INACTIVE)
+
+        return jwtProvider.generateBoothToken(booth.id!!)
     }
 
-    suspend fun register(request: RegisterRequest) = transactionalOperator.executeAndAwait {
-        if (boothRepository.existsByUsername(request.username)) {
+    suspend fun register(request: RegisterRequest) {
+        if (boothRepository.existsByUsername(request.username))
             throw CustomException(BoothError.BOOTH_USERNAME_ALREADY_EXISTS)
-        }
 
-        boothRepository.save(
-            BoothEntity(
-                username = request.username,
-                passwordHash = passwordEncoder.encode(request.password),
-                name = request.name,
-                description = request.description
-            )
-        )
+        boothRepository.save(BoothEntity(
+            username = request.username,
+            passwordHash = passwordEncoder.encode(request.password),
+            name = request.name,
+            description = request.description
+        ))
     }
 
     suspend fun refresh(request: RefreshRequest): JwtPayload {
-        if (jwtProvider.getType(request.refreshToken) != JwtType.REFRESH) {
+        if (jwtProvider.getType(request.refreshToken) != JwtType.REFRESH)
             throw CustomException(JwtError.INVALID_TOKEN_TYPE)
-        }
-
         val boothId = jwtProvider.getBoothId(request.refreshToken)
+
         return jwtProvider.generateBoothToken(boothId)
     }
 }

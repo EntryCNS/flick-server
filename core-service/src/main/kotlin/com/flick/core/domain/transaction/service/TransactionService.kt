@@ -17,8 +17,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class TransactionService(
@@ -27,42 +25,39 @@ class TransactionService(
     private val orderRepository: OrderRepository,
     private val productRepository: ProductRepository,
     private val boothRepository: BoothRepository,
-    private val orderItemRepository: OrderItemRepository,
-    private val transactionalOperator: TransactionalOperator
+    private val orderItemRepository: OrderItemRepository
 ) {
     suspend fun getMyTransactions(): Flow<TransactionResponse> {
         val userId = securityHolder.getUserId()
         val transactions = transactionRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
 
-        return transactionalOperator.executeAndAwait {
-            transactions.map {
-                val order = orderRepository.findById(it.orderId!!)
-                    ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
-                val booth = boothRepository.findById(order.boothId)
-                    ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
-                val item = orderItemRepository.findFirstByOrderId(order.id!!)
-                    ?: throw CustomException(OrderItemError.ORDER_ITEM_NOT_FOUND)
-                val product = productRepository.findById(item.productId)
-                    ?: throw CustomException(ProductError.PRODUCT_NOT_FOUND)
+        return transactions.map {
+            val order = orderRepository.findById(it.orderId!!)
+                ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+            val booth = boothRepository.findById(order.boothId)
+                ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
+            val item = orderItemRepository.findFirstByOrderId(order.id!!)
+                ?: throw CustomException(OrderItemError.ORDER_ITEM_NOT_FOUND)
+            val product = productRepository.findById(item.productId)
+                ?: throw CustomException(ProductError.PRODUCT_NOT_FOUND)
 
-                TransactionResponse(
-                    id = it.id!!,
-                    type = it.type,
-                    amount = it.amount,
-                    booth = TransactionResponse.Booth(
-                        name = booth.name,
-                    ),
-                    product = TransactionResponse.Product(
-                        name = product.name
-                    ),
-                    memo = it.memo,
-                    createdAt = it.createdAt,
-                )
-            }
+            TransactionResponse(
+                id = it.id!!,
+                type = it.type,
+                amount = it.amount,
+                booth = TransactionResponse.Booth(
+                    name = booth.name,
+                ),
+                product = TransactionResponse.Product(
+                    name = product.name
+                ),
+                memo = it.memo,
+                createdAt = it.createdAt,
+            )
         }
     }
 
-    suspend fun getTransaction(transactionId: Long): TransactionDetailResponse = transactionalOperator.executeAndAwait {
+    suspend fun getTransaction(transactionId: Long): TransactionDetailResponse {
         val transaction = transactionRepository.findById(transactionId)
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
@@ -71,8 +66,9 @@ class TransactionService(
         val booth = boothRepository.findById(order.boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
         val items = orderItemRepository.findAllByOrderId(order.id!!)
+            ?: throw CustomException(OrderItemError.ORDER_ITEM_NOT_FOUND)
 
-        TransactionDetailResponse(
+        return TransactionDetailResponse(
             id = transaction.id!!,
             type = transaction.type,
             amount = transaction.amount,

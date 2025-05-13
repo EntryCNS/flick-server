@@ -10,15 +10,12 @@ import com.flick.domain.transaction.repository.TransactionRepository
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Service
-class TransactionService(
-    private val transactionRepository: TransactionRepository,
-    private val transactionalOperator: TransactionalOperator
-) {
+class TransactionService(private val transactionRepository: TransactionRepository) {
+    @Transactional(readOnly = true)
     suspend fun getTransactions(
         page: Int,
         size: Int,
@@ -26,7 +23,7 @@ class TransactionService(
         type: TransactionType?,
         startDate: LocalDate?,
         endDate: LocalDate?
-    ): Page<TransactionResponse> = transactionalOperator.executeAndAwait {
+    ): Page<TransactionResponse> {
         val typeStr = type?.name
         val offset = (page - 1) * size
 
@@ -45,7 +42,7 @@ class TransactionService(
 
         val totalElements = transactionRepository.countByFilters(userId, typeStr, startDate, endDate)
 
-        Page.of(
+        return Page.of(
             content = transactions,
             pageNumber = page,
             pageSize = size,
@@ -53,11 +50,12 @@ class TransactionService(
         )
     }
 
-    suspend fun getTransaction(transactionId: Long): TransactionDetailResponse = transactionalOperator.executeAndAwait {
+    @Transactional(readOnly = true)
+    suspend fun getTransaction(transactionId: Long): TransactionDetailResponse {
         val transaction = transactionRepository.findById(transactionId)
             ?: throw CustomException(TransactionError.TRANSACTION_NOT_FOUND)
 
-        TransactionDetailResponse(
+        return TransactionDetailResponse(
             id = transaction.id!!,
             userId = transaction.userId,
             type = transaction.type,

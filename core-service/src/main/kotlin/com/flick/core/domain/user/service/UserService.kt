@@ -7,15 +7,9 @@ import com.flick.core.infra.security.SecurityHolder
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
-class UserService(
-    private val securityHolder: SecurityHolder,
-    private val userRepository: UserRepository,
-    private val transactionalOperator: TransactionalOperator
-) {
+class UserService(private val securityHolder: SecurityHolder, private val userRepository: UserRepository) {
     suspend fun getMyInfo(): UserResponse {
         val userId = securityHolder.getUserId()
         val user = userRepository.findById(userId)
@@ -43,7 +37,7 @@ class UserService(
         return user.balance
     }
 
-    suspend fun registerPushToken(request: PushTokenRequest) = transactionalOperator.executeAndAwait {
+    suspend fun registerPushToken(request: PushTokenRequest) {
         val userId = securityHolder.getUserId()
         val user = userRepository.findById(userId)
             ?: throw CustomException(UserError.USER_NOT_FOUND)
@@ -51,7 +45,7 @@ class UserService(
         userRepository.save(user.copy(pushToken = request.token))
     }
 
-    suspend fun unregisterPushToken() = transactionalOperator.executeAndAwait {
+    suspend fun unregisterPushToken() {
         val userId = securityHolder.getUserId()
         val user = userRepository.findById(userId)
             ?: throw CustomException(UserError.USER_NOT_FOUND)
