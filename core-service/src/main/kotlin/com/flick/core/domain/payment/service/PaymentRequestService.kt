@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.flick.common.error.CustomException
 import com.flick.core.domain.payment.dto.*
 import com.flick.core.infra.security.SecurityHolder
-import com.flick.domain.booth.entity.BoothEntity
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.payment.entity.PaymentEntity
@@ -32,8 +31,6 @@ import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Isolation
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service
@@ -46,8 +43,7 @@ class PaymentRequestService(
     private val orderRepository: OrderRepository,
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val boothRepository: BoothRepository,
-    private val objectMapper: ObjectMapper,
-    private val transactionalOperator: TransactionalOperator
+    private val objectMapper: ObjectMapper
 ) {
     suspend fun getPaymentRequest(token: String): PaymentRequestResponse {
         val paymentRequest = paymentRequestRepository.findByToken(token)
@@ -60,38 +56,30 @@ class PaymentRequestService(
         )
     }
 
-    suspend fun confirmPaymentRequest(request: ConfirmPaymentRequestRequest) {
-        var retryCount = 0
-        val maxRetries = 3
+    // CoroutineCrudRepository는 논블로킹인데 논블로킹에 withContext 쓰면 안 되는거 아닌가요?
+    // suspend 함수에 @Transactional, @Retryable 붙이면 안 되는거 아닌가요?
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Retryable(value = [OptimisticLockingFailureException::class], maxAttempts = 3)
+    suspend fun confirmPaymentRequest(request: ConfirmPaymentRequestRequest) = withContext(Dispatchers.IO) {
+        val userId = securityHolder.getUserId()
+        val paymentRequest = paymentRequestRepository.findByToken(request.token)
+            ?: throw CustomException(PaymentRequestError.PAYMENT_REQUEST_NOT_FOUND)
 
-        while (true) {
-            try {
-                val userId = securityHolder.getUserId()
-                val paymentRequest = paymentRequestRepository.findByToken(request.token)
-                    ?: throw CustomException(PaymentRequestError.PAYMENT_REQUEST_NOT_FOUND)
+        validatePaymentRequestStatus(paymentRequest)
 
-                validatePaymentRequestStatus(paymentRequest)
+        val order = orderRepository.findById(paymentRequest.orderId)
+            ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
-                transactionalOperator.executeAndAwait {
-                    val order = orderRepository.findById(paymentRequest.orderId)
-                        ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
+        if (order.status != OrderStatus.PENDING)
+            throw CustomException(OrderError.ORDER_NOT_PENDING)
 
-                    if (order.status != OrderStatus.PENDING)
-                        throw CustomException(OrderError.ORDER_NOT_PENDING)
+        val user = userRepository.findById(userId)
+            ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-                    val user = userRepository.findById(userId)
-                        ?: throw CustomException(UserError.USER_NOT_FOUND)
+        if (user.balance < order.totalAmount)
+            throw CustomException(UserError.INSUFFICIENT_BALANCE)
 
-                    if (user.balance < order.totalAmount)
-                        throw CustomException(UserError.INSUFFICIENT_BALANCE)
-
-                    processPayment(user, order, paymentRequest)
-                }
-                break
-            } catch (e: OptimisticLockingFailureException) {
-                if (++retryCount >= maxRetries) throw e
-            }
-        }
+        processPayment(user, order, paymentRequest)
     }
 
     private fun validatePaymentRequestStatus(request: PaymentRequestEntity) {
@@ -112,11 +100,13 @@ class PaymentRequestService(
 
         val transaction = transactionRepository.save(
             TransactionEntity(
+                id = null,
                 userId = userId,
                 type = TransactionType.PAYMENT,
                 amount = order.totalAmount,
                 balanceAfter = newBalance,
                 orderId = order.id,
+                adminId = null,
                 memo = "주문 #${order.boothOrderNumber} 결제",
                 createdAt = now
             )
@@ -124,6 +114,7 @@ class PaymentRequestService(
 
         paymentRepository.save(
             PaymentEntity(
+                id = null,
                 orderId = paymentRequest.orderId,
                 requestId = paymentRequest.id!!,
                 userId = userId,
@@ -168,7 +159,9 @@ class PaymentRequestService(
             boothId = boothId,
             totalSales = totalSales
         )
-        kafkaTemplate.send("booth-sales-updated", objectMapper.writeValueAsString(event))
+
+        val eventJson = objectMapper.writeValueAsString(event)
+        kafkaTemplate.send("booth-sales-updated", eventJson)
     }
 
     private fun sendPaymentStatusUpdate(requestId: Long, orderId: Long, status: PaymentStatus, paymentMethod: PaymentMethod?, amount: Long?) {
@@ -179,7 +172,9 @@ class PaymentRequestService(
             paymentMethod = paymentMethod,
             amount = amount
         )
-        kafkaTemplate.send("payment-status-update", objectMapper.writeValueAsString(event))
+
+        val eventJson = objectMapper.writeValueAsString(event)
+        kafkaTemplate.send("payment-status-update", eventJson)
     }
 
     private fun sendOrderCompletedNotification(userId: Long, orderId: Long, boothName: String, amount: Long) {
@@ -189,6 +184,7 @@ class PaymentRequestService(
             boothName = boothName,
             totalAmount = amount
         )
-        kafkaTemplate.send("order-completed", objectMapper.writeValueAsString(event))
+        val eventJson = objectMapper.writeValueAsString(event)
+        kafkaTemplate.send("order-completed", eventJson)
     }
 }

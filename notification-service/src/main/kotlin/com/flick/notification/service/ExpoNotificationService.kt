@@ -9,8 +9,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
@@ -19,8 +17,7 @@ class ExpoNotificationService(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository,
     private val objectMapper: ObjectMapper,
-    private val webClient: WebClient,
-    private val transactionalOperator: TransactionalOperator
+    private val webClient: WebClient
 ) : NotificationService {
     override suspend fun createNotificationAndSend(
         userId: Long,
@@ -29,25 +26,21 @@ class ExpoNotificationService(
         body: String,
         data: String?
     ) {
-        val notification = transactionalOperator.executeAndAwait {
-            val notification = NotificationEntity(
-                userId = userId,
-                type = type,
-                title = title,
-                body = body,
-                data = data,
-                isRead = false
-            )
+        val notification = NotificationEntity(
+            userId = userId,
+            type = type,
+            title = title,
+            body = body,
+            data = data,
+            isRead = false
+        )
 
-            notificationRepository.save(notification)
+        notificationRepository.save(notification)
 
-            val user = userRepository.findById(userId) ?: return@executeAndAwait null
-            val pushToken = user.pushToken ?: return@executeAndAwait null
+        val user = userRepository.findById(userId) ?: return
+        val pushToken = user.pushToken ?: return
 
-            notification to pushToken
-        } ?: return
-
-        sendExpoPushNotification(notification.second, type, title, body, data)
+        sendExpoPushNotification(pushToken, type, title, body, data)
     }
 
     private suspend fun sendExpoPushNotification(
