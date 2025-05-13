@@ -9,7 +9,7 @@ data class DAuthUser(
     val room: Int?,
     val number: Int?,
     val name: String,
-    val profileImage: String,
+    val profileImage: String?,
     val role: String,
     val email: String
 )
