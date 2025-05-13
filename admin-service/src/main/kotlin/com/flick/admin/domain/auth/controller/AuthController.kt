@@ -17,5 +17,5 @@ class AuthController(
     suspend fun login(@RequestBody request: LoginRequest) = authService.login(request)
 
     @PostMapping("/refresh")
-    fun refresh(@RequestBody request: RefreshRequest) = authService.refresh(request)
+    suspend fun refresh(@RequestBody request: RefreshRequest) = authService.refresh(request)
 }

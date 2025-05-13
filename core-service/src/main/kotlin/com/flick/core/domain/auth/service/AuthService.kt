@@ -2,7 +2,7 @@ package com.flick.core.domain.auth.service
 
 import com.flick.core.domain.auth.dto.request.LoginRequest
 import com.flick.core.domain.auth.dto.request.RefreshRequest
-import com.flick.core.infra.dauth.DAuthClient
+import com.flick.core.infra.dauth.client.DAuthClient
 import com.flick.core.infra.security.JwtPayload
 import com.flick.core.infra.security.JwtProvider
 import com.flick.domain.user.entity.UserEntity
