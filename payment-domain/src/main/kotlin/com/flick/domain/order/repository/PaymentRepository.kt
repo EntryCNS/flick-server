@@ -1,6 +1,6 @@
-package com.flick.domain.payment.repository
+package com.flick.domain.order.repository
 
-import com.flick.domain.payment.entity.PaymentEntity
+import com.flick.domain.order.entity.PaymentEntity
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 
 interface PaymentRepository : CoroutineCrudRepository<PaymentEntity, Long> {

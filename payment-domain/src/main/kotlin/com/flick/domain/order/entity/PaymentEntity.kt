@@ -1,4 +1,4 @@
-package com.flick.domain.payment.entity
+package com.flick.domain.order.entity
 
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id

@@ -1,6 +1,7 @@
 package com.flick.domain.transaction.repository
 
 import com.flick.domain.transaction.entity.TransactionEntity
+import com.flick.domain.transaction.enums.TransactionType
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
@@ -44,4 +45,12 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
         startDate: LocalDate?,
         endDate: LocalDate?
     ): Long
+
+
+    fun findAllByOrderByCreatedAtDesc(): Flow<TransactionEntity>
+
+    fun findByUserIdAndType(userId: Long, type: TransactionType): Flow<TransactionEntity>
+
+    @Query("SELECT SUM(amount) FROM transactions WHERE user_id = :userId AND type = :type")
+    suspend fun sumAmountByUserIdAndType(userId: Long, type: TransactionType): Long?
 }

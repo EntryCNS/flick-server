@@ -1,7 +1,7 @@
 package com.flick.core.domain.payment.dto
 
-import com.flick.domain.payment.enums.PaymentMethod
-import com.flick.domain.payment.enums.PaymentStatus
+import com.flick.domain.order.enums.PaymentMethod
+import com.flick.domain.order.enums.PaymentStatus
 import java.time.LocalDateTime
 
 data class PaymentStatusUpdateEvent(

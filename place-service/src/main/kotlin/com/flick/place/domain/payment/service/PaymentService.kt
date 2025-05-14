@@ -8,10 +8,10 @@ import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.order.entity.OrderEntity
 import com.flick.domain.order.enums.OrderStatus
 import com.flick.domain.order.error.OrderError
-import com.flick.domain.payment.entity.PaymentRequestEntity
-import com.flick.domain.payment.enums.PaymentMethod
-import com.flick.domain.payment.repository.OrderRepository
-import com.flick.domain.payment.repository.PaymentRequestRepository
+import com.flick.domain.order.entity.PaymentRequestEntity
+import com.flick.domain.order.enums.PaymentMethod
+import com.flick.domain.order.repository.OrderRepository
+import com.flick.domain.order.repository.PaymentRequestRepository
 import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import com.flick.place.domain.payment.dto.*

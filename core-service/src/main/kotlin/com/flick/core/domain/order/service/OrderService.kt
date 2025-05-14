@@ -6,8 +6,8 @@ import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.order.enums.OrderStatus
 import com.flick.domain.order.error.OrderError
-import com.flick.domain.payment.repository.OrderItemRepository
-import com.flick.domain.payment.repository.OrderRepository
+import com.flick.domain.order.repository.OrderItemRepository
+import com.flick.domain.order.repository.OrderRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 

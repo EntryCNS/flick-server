@@ -1,6 +1,6 @@
 package com.flick.core.domain.payment.dto
 
-import com.flick.domain.payment.enums.PaymentMethod
+import com.flick.domain.order.enums.PaymentMethod
 
 data class PaymentRequestResponse(
     val id: Long,
