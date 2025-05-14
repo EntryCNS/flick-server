@@ -9,5 +9,11 @@ data class TransactionResponse(
     val type: TransactionType,
     val amount: Long,
     val balanceAfter: Long,
+    val booth: Booth? = null,
+    val product: Product? = null,
+    val memo: String? = null,
     val createdAt: LocalDateTime
-)
+) {
+    data class Booth(val name: String)
+    data class Product(val name: String)
+}

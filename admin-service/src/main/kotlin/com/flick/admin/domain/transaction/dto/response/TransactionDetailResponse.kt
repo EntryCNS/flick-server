@@ -9,8 +9,28 @@ data class TransactionDetailResponse(
     val type: TransactionType,
     val amount: Long,
     val balanceAfter: Long,
-    val orderId: Long?,
-    val adminId: Long?,
-    val memo: String?,
+    val orderId: Long? = null,
+    val adminId: Long? = null,
+    val memo: String? = null,
+    val booth: Booth? = null,
+    val items: List<OrderItem> = emptyList(),
     val createdAt: LocalDateTime
-)
+) {
+    data class Booth(
+        val id: Long,
+        val name: String
+    )
+
+    data class Product(
+        val id: Long,
+        val name: String,
+        val price: Long
+    )
+
+    data class OrderItem(
+        val id: Long,
+        val product: Product,
+        val price: Long,
+        val quantity: Int
+    )
+}

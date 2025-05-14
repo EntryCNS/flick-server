@@ -15,6 +15,9 @@ dependencies {
     implementation(project(":notification-domain"))
     implementation(project(":inquiry-domain"))
     implementation(project(":notice-domain"))
+    implementation(project(":order-domain"))
+    implementation(project(":payment-domain"))
+    implementation(project(":product-domain"))
 
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-security")
