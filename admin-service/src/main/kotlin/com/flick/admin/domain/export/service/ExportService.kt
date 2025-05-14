@@ -3,29 +3,32 @@ package com.flick.admin.domain.export.service
 import com.flick.domain.booth.entity.BoothEntity
 import com.flick.domain.booth.enums.BoothStatus
 import com.flick.domain.booth.repository.BoothRepository
-import com.flick.domain.order.repository.OrderRepository
+import com.flick.domain.order.entity.OrderEntity
+import com.flick.domain.order.entity.OrderItemEntity
 import com.flick.domain.order.repository.OrderItemRepository
+import com.flick.domain.order.repository.OrderRepository
+import com.flick.domain.product.entity.ProductEntity
 import com.flick.domain.product.repository.ProductRepository
+import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.repository.TransactionRepository
+import com.flick.domain.user.entity.UserEntity
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.notification.repository.NotificationRepository
 import com.flick.domain.inquiry.repository.InquiryRepository
-import com.flick.domain.order.entity.OrderEntity
-import com.flick.domain.order.entity.OrderItemEntity
-import com.flick.domain.product.entity.ProductEntity
-import com.flick.domain.transaction.entity.TransactionEntity
-import com.flick.domain.user.entity.UserEntity
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
 import org.apache.poi.ss.usermodel.BorderStyle
-import org.apache.poi.ss.usermodel.CellStyle
 import org.apache.poi.ss.usermodel.FillPatternType
 import org.apache.poi.ss.usermodel.HorizontalAlignment
 import org.apache.poi.ss.usermodel.IndexedColors
 import org.apache.poi.ss.usermodel.VerticalAlignment
 import org.apache.poi.ss.util.CellRangeAddress
-import org.apache.poi.xssf.streaming.SXSSFWorkbook
+import org.apache.poi.xssf.usermodel.XSSFCellStyle
+import org.apache.poi.xssf.usermodel.XSSFFont
+import org.apache.poi.xssf.usermodel.XSSFSheet
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import org.slf4j.LoggerFactory
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Service
@@ -46,54 +49,65 @@ class ExportService(
     private val inquiryRepository: InquiryRepository,
     private val transactionalOperator: TransactionalOperator
 ) {
+    private val logger = LoggerFactory.getLogger(ExportService::class.java)
+
     suspend fun export(): Resource = transactionalOperator.executeAndAwait {
-        val workbook = SXSSFWorkbook(100)
+        logger.info("시작: 축제 결과 내보내기")
+
+        val workbook = XSSFWorkbook()
         val headerStyle = createHeaderStyle(workbook)
         val titleStyle = createTitleStyle(workbook)
         val subHeaderStyle = createSubHeaderStyle(workbook)
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-        coroutineScope {
-            val booths = async { boothRepository.findAllByStatusOrderByTotalSalesDesc(BoothStatus.APPROVED).toList() }
-            val allOrders = async { orderRepository.findByStatusPaid().toList() }
-            val allProducts = async { productRepository.findAll().toList() }
-            val allOrderItems = async { orderItemRepository.findForPaidOrders().toList() }
-            val transactions = async { transactionRepository.findAllByOrderByCreatedAtDesc().toList() }
-            val users = async { userRepository.findAll().toList() }
-            val notificationStats = async { notificationRepository.countGroupByType() }
-            val inquiryStats = async { inquiryRepository.countGroupByCategory() }
+        try {
+            coroutineScope {
+                val booths = async { boothRepository.findAllByStatusOrderByTotalSalesDesc(BoothStatus.APPROVED).toList() }
+                val allOrders = async { orderRepository.findByStatusPaid().toList() }
+                val allProducts = async { productRepository.findAll().toList() }
+                val allOrderItems = async { orderItemRepository.findForPaidOrders().toList() }
+                val transactions = async { transactionRepository.findAllByOrderByCreatedAtDesc().toList() }
+                val users = async { userRepository.findAll().toList() }
+                val notificationStats = async { notificationRepository.countGroupByType() }
+                val inquiryStats = async { inquiryRepository.countGroupByCategory() }
 
-            val boothsList = booths.await()
-            val ordersList = allOrders.await()
-            val productsList = allProducts.await()
-            val orderItemsList = allOrderItems.await()
-            val transactionsList = transactions.await()
-            val usersList = users.await()
+                val boothsList = booths.await()
+                val ordersList = allOrders.await()
+                val productsList = allProducts.await()
+                val orderItemsList = allOrderItems.await()
+                val transactionsList = transactions.await()
+                val usersList = users.await()
 
-            val ordersMapByBooth = ordersList.groupBy { it.boothId }
-            val orderItemsMapByOrder = orderItemsList.groupBy { it.orderId }
+                val ordersMapByBooth = ordersList.groupBy { it.boothId }
+                val orderItemsMapByOrder = orderItemsList.groupBy { it.orderId }
 
-            createSummarySheet(workbook, titleStyle, headerStyle, boothsList, ordersMapByBooth, orderItemsList, transactionsList)
-            createBoothRankingSheet(workbook, titleStyle, headerStyle, boothsList, ordersMapByBooth)
-            createBoothSheets(workbook, titleStyle, headerStyle, subHeaderStyle, dateFormatter, boothsList, ordersMapByBooth, orderItemsMapByOrder, productsList)
-            createProductSalesSheet(workbook, titleStyle, headerStyle, boothsList, productsList, orderItemsList)
-            createTransactionsSheet(workbook, titleStyle, headerStyle, dateFormatter, transactionsList)
-            createUserStatisticsSheet(workbook, titleStyle, headerStyle, usersList, transactionsList)
-            createSystemStatisticsSheet(workbook, titleStyle, headerStyle, notificationStats.await(), inquiryStats.await())
+                val safeOrderMap = ordersMapByBooth.mapKeys { it.key ?: 0L }
+                val safeOrderItemMap = orderItemsMapByOrder.mapKeys { it.key ?: 0L }
+
+                createSummarySheet(workbook, titleStyle, headerStyle, boothsList, safeOrderMap, orderItemsList, transactionsList)
+                createBoothRankingSheet(workbook, titleStyle, headerStyle, boothsList, safeOrderMap)
+                createBoothSheets(workbook, titleStyle, headerStyle, subHeaderStyle, dateFormatter, boothsList, safeOrderMap, safeOrderItemMap, productsList)
+                createProductSalesSheet(workbook, titleStyle, headerStyle, boothsList, productsList, orderItemsList)
+                createTransactionsSheet(workbook, titleStyle, headerStyle, dateFormatter, transactionsList)
+                createUserStatisticsSheet(workbook, titleStyle, headerStyle, usersList, transactionsList)
+                createSystemStatisticsSheet(workbook, titleStyle, headerStyle, notificationStats.await(), inquiryStats.await())
+            }
+
+            val outputStream = ByteArrayOutputStream()
+            workbook.write(outputStream)
+            workbook.close()
+
+            ByteArrayResource(outputStream.toByteArray())
+        } catch (e: Exception) {
+            logger.error("엑셀 내보내기 중 오류 발생", e)
+            throw e
         }
-
-        val outputStream = ByteArrayOutputStream()
-        workbook.write(outputStream)
-        workbook.close()
-        workbook.dispose()
-
-        ByteArrayResource(outputStream.toByteArray())
     }
 
     private fun createSummarySheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         booths: List<BoothEntity>,
         ordersMap: Map<Long, List<OrderEntity>>,
         orderItems: List<OrderItemEntity>,
@@ -136,13 +150,13 @@ class ExportService(
             row.createCell(1).setCellValue("${formatCurrency(booth.totalSales)}원")
         }
 
-        autoSizeColumns(sheet, 5)
+        setColumnWidths(sheet, 5)
     }
 
     private fun createBoothRankingSheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         booths: List<BoothEntity>,
         ordersMap: Map<Long, List<OrderEntity>>
     ) {
@@ -165,7 +179,8 @@ class ExportService(
 
         booths.forEachIndexed { index, booth ->
             val row = sheet.createRow(index + 3)
-            val boothOrders = ordersMap[booth.id] ?: emptyList()
+            val boothId = booth.id ?: 0L
+            val boothOrders = ordersMap[boothId] ?: emptyList()
             val orderCount = boothOrders.size
             val avgOrderAmount = if (orderCount > 0) booth.totalSales.toDouble() / orderCount else 0.0
 
@@ -176,14 +191,14 @@ class ExportService(
             row.createCell(4).setCellValue("${formatCurrency(avgOrderAmount.toLong())}원")
         }
 
-        autoSizeColumns(sheet, headers.size)
+        setColumnWidths(sheet, headers.size)
     }
 
     private fun createBoothSheets(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
-        subHeaderStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
+        subHeaderStyle: XSSFCellStyle,
         dateFormatter: DateTimeFormatter,
         booths: List<BoothEntity>,
         ordersMap: Map<Long, List<OrderEntity>>,
@@ -191,6 +206,8 @@ class ExportService(
         products: List<ProductEntity>
     ) {
         for (booth in booths) {
+            val boothId = booth.id ?: continue
+
             val sheetName = booth.name.take(30)
             val sheet = workbook.createSheet(sheetName)
 
@@ -202,11 +219,11 @@ class ExportService(
 
             var rowNum = 2
 
-            val boothOrders = ordersMap[booth.id] ?: emptyList()
+            val boothOrders = ordersMap[boothId] ?: emptyList()
             val totalSales = booth.totalSales
             val orderCount = boothOrders.size
             val avgOrderAmount = if (orderCount > 0) totalSales.toDouble() / orderCount else 0.0
-            val boothProducts = products.filter { it.boothId == booth.id }
+            val boothProducts = products.filter { it.boothId == boothId }
             val productCount = boothProducts.size
 
             createLabelValueRow(sheet, rowNum++, "부스명", booth.name)
@@ -233,15 +250,18 @@ class ExportService(
 
             val productSalesMap = mutableMapOf<Long, Pair<Int, Long>>()
             for (order in boothOrders) {
-                val items = orderItemsMap[order.id] ?: continue
+                val orderId = order.id ?: continue
+                val items = orderItemsMap[orderId] ?: continue
                 for (item in items) {
-                    val current = productSalesMap.getOrDefault(item.productId, 0 to 0L)
-                    productSalesMap[item.productId] = current.first + item.quantity to current.second + (item.price * item.quantity)
+                    val productId = item.productId
+                    val current = productSalesMap.getOrDefault(productId, 0 to 0L)
+                    productSalesMap[productId] = current.first + item.quantity to current.second + (item.price * item.quantity)
                 }
             }
 
             boothProducts.forEach { product ->
-                val (quantity, totalSalesForProduct) = productSalesMap.getOrDefault(product.id, 0 to 0L)
+                val productId = product.id ?: 0L
+                val (quantity, totalSalesForProduct) = productSalesMap.getOrDefault(productId, 0 to 0L)
 
                 if (quantity > 0) {
                     val row = sheet.createRow(rowNum++)
@@ -269,7 +289,7 @@ class ExportService(
 
             boothOrders.forEach { order ->
                 val row = sheet.createRow(rowNum++)
-                row.createCell(0).setCellValue(order.id.toString())
+                row.createCell(0).setCellValue(order.id?.toString() ?: "")
                 row.createCell(1).setCellValue(order.boothOrderNumber.toString())
                 row.createCell(2).setCellValue("${formatCurrency(order.totalAmount)}원")
                 row.createCell(3).setCellValue(order.userId?.toString() ?: "")
@@ -277,14 +297,14 @@ class ExportService(
                 row.createCell(5).setCellValue(order.paidAt?.format(dateFormatter) ?: "")
             }
 
-            autoSizeColumns(sheet, 6)
+            setColumnWidths(sheet, 6)
         }
     }
 
     private fun createProductSalesSheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         booths: List<BoothEntity>,
         products: List<ProductEntity>,
         orderItems: List<OrderItemEntity>
@@ -313,11 +333,14 @@ class ExportService(
             }
 
         val productRankings = products
-            .filter { productSalesMap.containsKey(it.id) }
-            .map { product ->
-                val (quantity, totalSales) = productSalesMap[product.id] ?: (0 to 0L)
-                val booth = booths.find { it.id == product.boothId }
-                ProductSalesData(product, booth?.name ?: "", quantity, totalSales)
+            .mapNotNull { product ->
+                val productId = product.id ?: return@mapNotNull null
+                val boothId = product.boothId
+                val (quantity, totalSales) = productSalesMap[productId] ?: (0 to 0L)
+                if (quantity <= 0) return@mapNotNull null
+
+                val booth = booths.find { it.id == boothId }
+                ProductSalesData(product, booth?.name ?: "알 수 없음", quantity, totalSales)
             }
             .sortedByDescending { it.quantity }
 
@@ -332,13 +355,13 @@ class ExportService(
             row.createCell(5).setCellValue("${formatCurrency(data.totalSales)}원")
         }
 
-        autoSizeColumns(sheet, headers.size)
+        setColumnWidths(sheet, headers.size)
     }
 
     private fun createTransactionsSheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         dateFormatter: DateTimeFormatter,
         transactions: List<TransactionEntity>
     ) {
@@ -362,7 +385,7 @@ class ExportService(
         transactions.forEachIndexed { index, transaction ->
             val row = sheet.createRow(index + 3)
 
-            row.createCell(0).setCellValue(transaction.id.toString())
+            row.createCell(0).setCellValue(transaction.id?.toString() ?: "")
             row.createCell(1).setCellValue(transaction.userId.toString())
             row.createCell(2).setCellValue(transaction.type.toString())
             row.createCell(3).setCellValue("${formatCurrency(transaction.amount)}원")
@@ -371,13 +394,13 @@ class ExportService(
             row.createCell(6).setCellValue(transaction.createdAt.format(dateFormatter))
         }
 
-        autoSizeColumns(sheet, headers.size)
+        setColumnWidths(sheet, headers.size)
     }
 
     private fun createUserStatisticsSheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         users: List<UserEntity>,
         transactions: List<TransactionEntity>
     ) {
@@ -400,8 +423,10 @@ class ExportService(
 
         val transactionsByUser = transactions.groupBy { it.userId }
 
-        users.forEachIndexed { index, user ->
-            val userTransactions = transactionsByUser[user.id] ?: emptyList()
+        var rowIndex = 3
+        users.forEach { user ->
+            val userId = user.id ?: return@forEach
+            val userTransactions = transactionsByUser[userId] ?: emptyList()
             val charges = userTransactions.filter { it.type.toString() == "CHARGE" }
             val payments = userTransactions.filter { it.type.toString() == "PAYMENT" }
 
@@ -410,9 +435,9 @@ class ExportService(
             val paymentCount = payments.size
             val avgPayment = if (paymentCount > 0) totalPayment.toDouble() / paymentCount else 0.0
 
-            val row = sheet.createRow(index + 3)
+            val row = sheet.createRow(rowIndex++)
 
-            row.createCell(0).setCellValue(user.id.toString())
+            row.createCell(0).setCellValue(userId.toString())
             row.createCell(1).setCellValue(user.name)
             row.createCell(2).setCellValue("${formatCurrency(user.balance)}원")
             row.createCell(3).setCellValue("${formatCurrency(totalCharge)}원")
@@ -421,13 +446,13 @@ class ExportService(
             row.createCell(6).setCellValue("${formatCurrency(avgPayment.toLong())}원")
         }
 
-        autoSizeColumns(sheet, headers.size)
+        setColumnWidths(sheet, headers.size)
     }
 
     private fun createSystemStatisticsSheet(
-        workbook: SXSSFWorkbook,
-        titleStyle: CellStyle,
-        headerStyle: CellStyle,
+        workbook: XSSFWorkbook,
+        titleStyle: XSSFCellStyle,
+        headerStyle: XSSFCellStyle,
         notificationStats: List<Map<String, Any>>,
         inquiryStats: List<Map<String, Any>>
     ) {
@@ -456,8 +481,8 @@ class ExportService(
 
         notificationStats.forEach { stat ->
             val row = sheet.createRow(rowNum++)
-            row.createCell(0).setCellValue(stat["type"].toString())
-            row.createCell(1).setCellValue(stat["count"].toString())
+            row.createCell(0).setCellValue(stat["type"]?.toString() ?: "")
+            row.createCell(1).setCellValue(stat["count"]?.toString() ?: "0")
         }
 
         rowNum += 2
@@ -477,26 +502,26 @@ class ExportService(
 
         inquiryStats.forEach { stat ->
             val row = sheet.createRow(rowNum++)
-            row.createCell(0).setCellValue(stat["category"].toString())
-            row.createCell(1).setCellValue(stat["count"].toString())
+            row.createCell(0).setCellValue(stat["category"]?.toString() ?: "")
+            row.createCell(1).setCellValue(stat["count"]?.toString() ?: "0")
         }
 
-        autoSizeColumns(sheet, 3)
+        setColumnWidths(sheet, 3)
     }
 
-    private fun createLabelValueRow(sheet: org.apache.poi.ss.usermodel.Sheet, rowNum: Int, label: String, value: String) {
+    private fun createLabelValueRow(sheet: XSSFSheet, rowNum: Int, label: String, value: String) {
         val row = sheet.createRow(rowNum)
         row.createCell(0).setCellValue(label)
         row.createCell(1).setCellValue(value)
     }
 
-    private fun autoSizeColumns(sheet: org.apache.poi.ss.usermodel.Sheet, columnCount: Int) {
+    private fun setColumnWidths(sheet: XSSFSheet, columnCount: Int) {
         for (i in 0 until columnCount) {
-            sheet.autoSizeColumn(i)
+            sheet.setColumnWidth(i, 15 * 256)
         }
     }
 
-    private fun createHeaderStyle(workbook: SXSSFWorkbook): CellStyle {
+    private fun createHeaderStyle(workbook: XSSFWorkbook): XSSFCellStyle {
         val style = workbook.createCellStyle()
         val font = workbook.createFont()
 
@@ -514,7 +539,7 @@ class ExportService(
         return style
     }
 
-    private fun createTitleStyle(workbook: SXSSFWorkbook): CellStyle {
+    private fun createTitleStyle(workbook: XSSFWorkbook): XSSFCellStyle {
         val style = workbook.createCellStyle()
         val font = workbook.createFont()
 
@@ -527,7 +552,7 @@ class ExportService(
         return style
     }
 
-    private fun createSubHeaderStyle(workbook: SXSSFWorkbook): CellStyle {
+    private fun createSubHeaderStyle(workbook: XSSFWorkbook): XSSFCellStyle {
         val style = workbook.createCellStyle()
         val font = workbook.createFont()
 

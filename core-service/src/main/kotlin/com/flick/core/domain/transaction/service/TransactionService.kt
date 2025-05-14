@@ -40,7 +40,7 @@ class TransactionService(
             transactions.map { transaction ->
                 when (transaction.type) {
                     TransactionType.CHARGE -> createChargeTransactionResponse(transaction)
-                    else -> createPaymentTransactionResponse(transaction)
+                    TransactionType.PAYMENT -> createPaymentTransactionResponse(transaction)
                 }
             }
         }
@@ -50,11 +50,32 @@ class TransactionService(
         val transaction = transactionRepository.findById(transactionId)
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
+        when (transaction.type) {
+            TransactionType.CHARGE -> createChargeTransactionDetailResponse(transaction)
+            TransactionType.PAYMENT -> createPaymentTransactionDetailResponse(transaction)
+        }
+    }
+
+    private suspend fun createChargeTransactionDetailResponse(
+        transaction: TransactionEntity
+    ): TransactionDetailResponse {
+        return TransactionDetailResponse(
+            id = transaction.id!!,
+            type = transaction.type,
+            amount = transaction.amount,
+            memo = transaction.memo,
+            createdAt = transaction.createdAt,
+        )
+    }
+
+    private suspend fun createPaymentTransactionDetailResponse(
+        transaction: TransactionEntity
+    ): TransactionDetailResponse {
         val order = findOrderById(transaction.orderId!!)
         val booth = findBoothById(order.boothId)
         val items = orderItemRepository.findAllByOrderId(order.id!!)
 
-        TransactionDetailResponse(
+        return TransactionDetailResponse(
             id = transaction.id!!,
             type = transaction.type,
             amount = transaction.amount,

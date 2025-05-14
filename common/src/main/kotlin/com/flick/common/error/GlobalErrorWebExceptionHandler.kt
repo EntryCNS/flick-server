@@ -1,6 +1,7 @@
 package com.flick.common.error
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.flick.common.utils.logger
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.reactor.mono
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler
@@ -31,6 +32,8 @@ class GlobalErrorWebExceptionHandler(private val objectMapper: ObjectMapper) : E
     }
 
     private fun createErrorResponse(ex: Throwable, path: String): ErrorResponse {
+        logger().error("Error occurred at path: $path", ex)
+
         return when (ex) {
             is CustomException -> ErrorResponse(
                 status = ex.status,

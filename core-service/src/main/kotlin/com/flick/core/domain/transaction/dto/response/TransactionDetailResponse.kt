@@ -9,8 +9,8 @@ data class TransactionDetailResponse(
     val amount: Long,
     val memo: String?,
     val createdAt: LocalDateTime,
-    val booth: Booth,
-    val items: List<OrderItem>,
+    val booth: Booth? = null,
+    val items: List<OrderItem>? = null,
 ) {
     data class Booth(
         val id: Long,
