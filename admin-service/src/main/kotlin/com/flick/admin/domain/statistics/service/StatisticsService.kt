@@ -6,13 +6,11 @@ import com.flick.domain.transaction.repository.TransactionRepository
 import com.flick.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
 
 @Service
 class StatisticsService(
     private val userRepository: UserRepository,
-    private val transactionRepository: TransactionRepository,
-    private val transactionalOperator: TransactionalOperator,
+    private val transactionRepository: TransactionRepository
 ) {
     suspend fun getStatistics(): StatisticsResponse {
 
