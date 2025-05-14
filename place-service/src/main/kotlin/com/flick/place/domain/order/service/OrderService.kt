@@ -5,10 +5,10 @@ import com.flick.domain.order.entity.OrderEntity
 import com.flick.domain.order.enums.OrderStatus
 import com.flick.domain.order.error.OrderError
 import com.flick.domain.payment.entity.OrderItemEntity
-import com.flick.domain.product.enums.ProductStatus
-import com.flick.domain.product.error.ProductError
 import com.flick.domain.payment.repository.OrderItemRepository
 import com.flick.domain.payment.repository.OrderRepository
+import com.flick.domain.product.enums.ProductStatus
+import com.flick.domain.product.error.ProductError
 import com.flick.domain.product.repository.ProductRepository
 import com.flick.place.domain.order.dto.request.CreateOrderRequest
 import com.flick.place.domain.order.dto.response.OrderResponse
@@ -30,16 +30,14 @@ class OrderService(
     private val orderItemRepository: OrderItemRepository,
     private val transactionalOperator: TransactionalOperator
 ) {
-    suspend fun getOrders(): Flow<OrderResponse> = transactionalOperator.executeAndAwait {
-        val boothId = securityHolder.getBoothId()
-        orderRepository.findAllByBoothId(boothId).map { it.toResponse() }
-    }
+    suspend fun getOrders(): Flow<OrderResponse> =
+        orderRepository.findAllByBoothId(securityHolder.getBoothId()).map { it.toResponse() }
 
-    suspend fun getOrder(orderId: Long): OrderResponse = transactionalOperator.executeAndAwait {
+    suspend fun getOrder(orderId: Long): OrderResponse {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
             ?: throw CustomException(OrderError.ORDER_NOT_FOUND)
 
-        order.toResponse()
+        return order.toResponse()
     }
 
     suspend fun createOrder(request: CreateOrderRequest): OrderResponse = transactionalOperator.executeAndAwait {

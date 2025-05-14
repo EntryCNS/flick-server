@@ -5,8 +5,7 @@ import com.flick.domain.notification.entity.NotificationEntity
 import com.flick.domain.notification.enums.NotificationType
 import com.flick.domain.notification.repository.NotificationRepository
 import com.flick.domain.user.repository.UserRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
@@ -81,14 +80,12 @@ class ExpoNotificationService(
             "priority" to "high"
         )
 
-        withContext(Dispatchers.IO) {
-            webClient.post()
-                .uri("https://exp.host/--/api/v2/push/send")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(Mono.just(requestBody), Map::class.java)
-                .retrieve()
-                .bodyToMono(Map::class.java)
-                .block()
-        }
+        webClient.post()
+            .uri("https://exp.host/--/api/v2/push/send")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(Mono.just(requestBody), Map::class.java)
+            .retrieve()
+            .bodyToMono(Map::class.java)
+            .awaitSingle()
     }
 }

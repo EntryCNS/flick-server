@@ -24,7 +24,7 @@ class AuthService(
     private val jwtProvider: JwtProvider,
     private val transactionalOperator: TransactionalOperator
 ) {
-    suspend fun login(request: LoginRequest): JwtPayload = transactionalOperator.executeAndAwait {
+    suspend fun login(request: LoginRequest): JwtPayload {
         val booth = boothRepository.findByUsername(request.username)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
@@ -32,7 +32,7 @@ class AuthService(
             throw CustomException(BoothError.BOOTH_PASSWORD_NOT_MATCH)
         }
 
-        when (booth.status) {
+        return when (booth.status) {
             BoothStatus.PENDING -> throw CustomException(BoothError.BOOTH_NOT_APPROVED)
             BoothStatus.REJECTED -> throw CustomException(BoothError.BOOTH_REJECTED)
             BoothStatus.INACTIVE -> throw CustomException(BoothError.BOOTH_INACTIVE)

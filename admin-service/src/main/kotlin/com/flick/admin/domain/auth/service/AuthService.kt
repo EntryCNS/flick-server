@@ -12,8 +12,6 @@ import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.user.repository.UserRoleRepository
 import kotlinx.coroutines.flow.firstOrNull
 import org.springframework.stereotype.Service
-import org.springframework.transaction.reactive.TransactionalOperator
-import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
 
 @Service

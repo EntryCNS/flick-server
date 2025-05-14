@@ -21,22 +21,18 @@ class ProductService(
     private val securityHolder: SecurityHolder,
     private val transactionalOperator: TransactionalOperator
 ) {
-    suspend fun getProducts(): Flow<ProductResponse> = transactionalOperator.executeAndAwait {
-        val boothId = securityHolder.getBoothId()
-        productRepository.findAllByBoothId(boothId).map { it.toResponse() }
-    }
+    suspend fun getProducts(): Flow<ProductResponse> =
+        productRepository.findAllByBoothId(securityHolder.getBoothId()).map { it.toResponse() }
 
-    suspend fun getAvailableProducts(): Flow<ProductResponse> = transactionalOperator.executeAndAwait {
-        val boothId = securityHolder.getBoothId()
-        productRepository.findAllByBoothIdAndStatus(boothId, ProductStatus.AVAILABLE)
+    suspend fun getAvailableProducts(): Flow<ProductResponse> =
+        productRepository.findAllByBoothIdAndStatus(securityHolder.getBoothId(), ProductStatus.AVAILABLE)
             .map { it.toResponse() }
-    }
 
-    suspend fun getProduct(productId: Long): ProductResponse = transactionalOperator.executeAndAwait {
+    suspend fun getProduct(productId: Long): ProductResponse {
         val product = productRepository.findById(productId)
             ?: throw CustomException(ProductError.PRODUCT_NOT_FOUND)
 
-        product.toResponse()
+        return product.toResponse()
     }
 
     suspend fun createProduct(request: CreateProductRequest) = transactionalOperator.executeAndAwait {
