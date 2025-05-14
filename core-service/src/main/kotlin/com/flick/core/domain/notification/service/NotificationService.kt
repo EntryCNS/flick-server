@@ -16,7 +16,7 @@ class NotificationService(
 ) {
     suspend fun getMyNotifications(): Flow<NotificationResponse> {
         val userId = securityHolder.getUserId()
-        val notifications = notificationRepository.findAllByUserId(userId)
+        val notifications = notificationRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
 
         return notifications.map { notification ->
             NotificationResponse(

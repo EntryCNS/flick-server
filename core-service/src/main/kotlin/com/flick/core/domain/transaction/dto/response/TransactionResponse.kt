@@ -7,9 +7,9 @@ data class TransactionResponse(
     val id: Long,
     val type: TransactionType,
     val amount: Long,
-    val booth: Booth,
+    val booth: Booth? = null,
     val product: Product? = null,
-    val memo: String?,
+    val memo: String? = null,
     val createdAt: LocalDateTime
 ) {
     data class Product(
