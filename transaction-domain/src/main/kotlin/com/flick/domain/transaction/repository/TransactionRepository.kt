@@ -48,9 +48,4 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
 
 
     fun findAllByOrderByCreatedAtDesc(): Flow<TransactionEntity>
-
-    fun findByUserIdAndType(userId: Long, type: TransactionType): Flow<TransactionEntity>
-
-    @Query("SELECT SUM(amount) FROM transactions WHERE user_id = :userId AND type = :type")
-    suspend fun sumAmountByUserIdAndType(userId: Long, type: TransactionType): Long?
 }
