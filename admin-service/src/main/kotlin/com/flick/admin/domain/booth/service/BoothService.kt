@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
+import org.springframework.transaction.reactive.executeAndAwait
 
 @Service
 class BoothService(
     private val boothRepository: BoothRepository,
     private val boothWebSocketHandler: BoothWebSocketHandler,
+    private val transactionalOperator: TransactionalOperator
 ) {
     suspend fun getBooths(statuses: List<BoothStatus>): Flow<BoothResponse> {
         val booths = if (statuses.isEmpty()) boothRepository.findAll() else boothRepository.findAllByStatusIn(statuses)
@@ -33,10 +36,13 @@ class BoothService(
         }
     }
 
-    suspend fun approveBooth(boothId: Long) =
+    suspend fun approveBooth(boothId: Long) = transactionalOperator.executeAndAwait {
         boothRepository.save(getBooth(boothId).copy(status = BoothStatus.APPROVED))
+    }
 
-    suspend fun rejectBooth(boothId: Long) = boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
+    suspend fun rejectBooth(boothId: Long) = transactionalOperator.executeAndAwait {
+        boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
+    }
 
     suspend fun publishRanking() {
         val booths = boothRepository.findAllByOrderByTotalSalesDesc().toList()
