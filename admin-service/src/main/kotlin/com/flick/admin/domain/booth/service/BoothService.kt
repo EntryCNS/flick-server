@@ -1,5 +1,6 @@
 package com.flick.admin.domain.booth.service
 
+import com.flick.admin.domain.booth.BoothRankingCache
 import com.flick.admin.domain.booth.dto.response.BoothRankingResponse
 import com.flick.admin.domain.booth.dto.response.BoothResponse
 import com.flick.admin.infra.websocket.BoothWebSocketHandler
@@ -18,7 +19,8 @@ import org.springframework.transaction.reactive.executeAndAwait
 class BoothService(
     private val boothRepository: BoothRepository,
     private val boothWebSocketHandler: BoothWebSocketHandler,
-    private val transactionalOperator: TransactionalOperator
+    private val transactionalOperator: TransactionalOperator,
+    private val rankingCache: BoothRankingCache,
 ) {
     suspend fun getBooths(statuses: List<BoothStatus>): Flow<BoothResponse> {
         val booths = if (statuses.isEmpty()) boothRepository.findAll() else boothRepository.findAllByStatusIn(statuses)
@@ -44,21 +46,33 @@ class BoothService(
         boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
     }
 
-    suspend fun publishRanking() {
-        val booths = boothRepository.findAllByOrderByTotalSalesDesc().toList()
+    suspend fun publishRankings() {
+        val current = getCurrentRankings()
 
-        val ranking = booths.mapIndexed { index, it ->
-            BoothRankingResponse(
-                rank = index + 1,
-                id = it.id!!,
-                name = it.name,
-                totalSales = it.totalSales,
-            )
+        val previousMap = rankingCache.previous.associateBy { it.id }
+        val changed = current.filter { currentItem ->
+            val previousItem = previousMap[currentItem.id]
+            previousItem == null || previousItem.rank != currentItem.rank || previousItem.totalSales != currentItem.totalSales
         }
 
-        boothWebSocketHandler.sendRankingUpdate(ranking)
+        if (changed.isNotEmpty()) {
+            boothWebSocketHandler.sendRankingUpdate(changed)
+            rankingCache.previous = current
+        }
     }
+
+    suspend fun getBoothRankings() = getCurrentRankings()
 
     private suspend fun getBooth(boothId: Long) =
         boothRepository.findById(boothId) ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
+
+    private suspend fun getCurrentRankings() = boothRepository.findAllByOrderByTotalSalesDesc().toList()
+        .mapIndexed { index, booth ->
+            BoothRankingResponse(
+                rank = index + 1,
+                id = booth.id!!,
+                name = booth.name,
+                totalSales = booth.totalSales,
+            )
+        }
 }
