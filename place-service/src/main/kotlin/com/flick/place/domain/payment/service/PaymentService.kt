@@ -16,8 +16,6 @@ import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import com.flick.place.domain.payment.dto.*
 import com.flick.place.infra.security.SecurityHolder
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
@@ -55,8 +53,8 @@ class PaymentService(
             )
         }
 
-    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse =
-        transactionalOperator.executeAndAwait {
+    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse {
+        val (response, event) = transactionalOperator.executeAndAwait {
             val order = getPendingOrder(request.orderId)
             val token = generatePaymentToken()
 
@@ -77,16 +75,20 @@ class PaymentService(
                 number = request.studentId.substring(2).toInt()
             ) ?: throw CustomException(UserError.USER_NOT_FOUND)
 
-            CreateStudentIdPaymentResponse(id = paymentRequest.id!!).also {
-                sendPaymentRequestNotification(
-                    userId = user.id!!,
-                    orderId = order.id!!,
-                    boothName = booth.name,
-                    totalAmount = order.totalAmount,
-                    token = token
-                )
-            }
+            val event = PaymentRequestEventDto(
+                userId = user.id!!,
+                orderId = order.id!!,
+                boothName = booth.name,
+                totalAmount = order.totalAmount,
+                token = token
+            )
+
+            CreateStudentIdPaymentResponse(id = paymentRequest.id!!) to event
         }
+
+        sendPaymentRequestNotification(event)
+        return response
+    }
 
     private suspend fun getPendingOrder(orderId: Long): OrderEntity {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())
@@ -101,29 +103,14 @@ class PaymentService(
 
     private fun generatePaymentToken() = (1..32).map { (('a'..'z') + ('1'..'9')).random() }.joinToString("")
 
-    private suspend fun sendPaymentRequestNotification(
-        userId: Long,
-        orderId: Long,
-        boothName: String,
-        totalAmount: Long,
-        token: String
-    ) {
-        val event = PaymentRequestEventDto(
-            userId = userId,
-            orderId = orderId,
-            boothName = boothName,
-            totalAmount = totalAmount,
-            token = token
-        )
-
+    private suspend fun sendPaymentRequestNotification(event: PaymentRequestEventDto) {
         try {
             val eventJson = objectMapper.writeValueAsString(event)
-            withContext(Dispatchers.IO) {
-                kafkaTemplate.send("payment-request", eventJson)
-            }
-            log.info("Payment request notification sent for order $orderId")
+
+            kafkaTemplate.send("payment-request", eventJson)
+            log.info("Payment request notification sent for order ${event.orderId}")
         } catch (e: Exception) {
-            log.error("Failed to send payment request notification for order $orderId", e)
+            log.error("Failed to send payment request notification for order ${event.orderId}", e)
         }
     }
 }

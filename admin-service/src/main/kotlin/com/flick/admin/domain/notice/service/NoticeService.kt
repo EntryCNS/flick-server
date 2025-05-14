@@ -64,7 +64,7 @@ class NoticeService(
     suspend fun createNotice(request: CreateNoticeRequest) {
         val adminId = securityHolder.getAdminId()
 
-        val notice = transactionalOperator.executeAndAwait {
+        broadcastNotice(
             noticeRepository.save(
                 NoticeEntity(
                     title = request.title,
@@ -73,9 +73,7 @@ class NoticeService(
                     isPinned = request.isPinned
                 )
             )
-        }
-
-        broadcastNotice(notice)
+        )
     }
 
     suspend fun updateNotice(noticeId: Long, request: UpdateNoticeRequest) {
