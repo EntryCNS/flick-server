@@ -13,17 +13,17 @@ interface InquiryRepository : CoroutineCrudRepository<InquiryEntity, Long> {
         SELECT * FROM inquiries
         ORDER BY id DESC
         LIMIT :limit OFFSET :offset
-    """
+        """
     )
     fun findAll(@Param("limit") limit: Int, @Param("offset") offset: Int): Flow<InquiryEntity>
 
     @Query(
         """
         SELECT * FROM inquiries
-        WHERE (:category IS NULL OR category = :category)
-        ORDER BY id
+        WHERE category = :category
+        ORDER BY id DESC
         LIMIT :limit OFFSET :offset
-    """
+        """
     )
     fun findAllByCategory(
         @Param("category") category: InquiryCategory,
@@ -34,5 +34,10 @@ interface InquiryRepository : CoroutineCrudRepository<InquiryEntity, Long> {
     suspend fun countByCategory(category: InquiryCategory): Long
 
     @Query("SELECT category, COUNT(*) as count FROM inquiries GROUP BY category ORDER BY count DESC")
-    suspend fun countGroupByCategory(): List<Map<String, Any>>
+    suspend fun countGroupByCategory(): List<CategoryCount>
+
+    data class CategoryCount(
+        val category: InquiryCategory,
+        val count: Long
+    )
 }
