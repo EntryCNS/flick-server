@@ -1,10 +1,10 @@
 package com.flick.domain.transaction.repository
 
 import com.flick.domain.transaction.entity.TransactionEntity
-import com.flick.domain.transaction.enums.TransactionType
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
+import org.springframework.data.repository.query.Param
 import java.time.LocalDate
 
 interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Long> {
@@ -18,16 +18,16 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
         AND (:startDate IS NULL OR DATE(t.created_at) >= :startDate)
         AND (:endDate IS NULL OR DATE(t.created_at) <= :endDate)
         ORDER BY t.created_at DESC
-        LIMIT :limit OFFSET :offset
+        LIMIT :size OFFSET :offset
     """
     )
     fun findByFilters(
-        userId: Long?,
-        type: String?,
-        startDate: LocalDate?,
-        endDate: LocalDate?,
-        limit: Int,
-        offset: Int
+        @Param("userId") userId: Long?,
+        @Param("type") type: String?,
+        @Param("startDate") startDate: LocalDate?,
+        @Param("endDate") endDate: LocalDate?,
+        @Param("size") size: Int,
+        @Param("offset") offset: Int
     ): Flow<TransactionEntity>
 
     @Query(
@@ -40,10 +40,10 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
     """
     )
     suspend fun countByFilters(
-        userId: Long?,
-        type: String?,
-        startDate: LocalDate?,
-        endDate: LocalDate?
+        @Param("userId") userId: Long?,
+        @Param("type") type: String?,
+        @Param("startDate") startDate: LocalDate?,
+        @Param("endDate") endDate: LocalDate?
     ): Long
 
 
