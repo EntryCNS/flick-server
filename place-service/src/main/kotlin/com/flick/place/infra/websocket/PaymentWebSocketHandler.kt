@@ -50,6 +50,7 @@ class PaymentWebSocketHandler : WebSocketHandler {
                     session.close().then()
                 }
             }
+
             else -> {
                 log.warn("Unsupported WebSocket path: $path")
                 session.close().then()

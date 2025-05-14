@@ -2,12 +2,7 @@ package com.flick.place.domain.order.controller
 
 import com.flick.place.domain.order.dto.request.CreateOrderRequest
 import com.flick.place.domain.order.service.OrderService
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/orders")

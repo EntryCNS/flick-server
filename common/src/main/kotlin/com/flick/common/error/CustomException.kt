@@ -3,7 +3,7 @@ package com.flick.common.error
 class CustomException(
     val error: CustomError,
     vararg args: Any?
-): RuntimeException(
+) : RuntimeException(
     error.message.format(*args)
 ) {
     val status: Int = error.status.value()

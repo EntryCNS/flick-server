@@ -35,8 +35,10 @@ class NotificationService(
         val notification = notificationRepository.findByIdAndUserId(notificationId, userId)
             ?: throw CustomException(NotificationError.NOTIFICATION_NOT_FOUND)
 
-        notificationRepository.save(notification.copy(
-            isRead = true
-        ))
+        notificationRepository.save(
+            notification.copy(
+                isRead = true
+            )
+        )
     }
 }

@@ -6,19 +6,19 @@ import com.flick.domain.notification.repository.NotificationRepository
 import com.flick.domain.user.repository.UserRepository
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.Message
-import com.google.firebase.messaging.Notification as FcmNotification
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import com.google.firebase.messaging.Notification as FcmNotification
 
 //@Service
 class FcmNotificationService(
     private val userRepository: UserRepository,
     private val firebaseMessaging: FirebaseMessaging,
     private val notificationRepository: NotificationRepository
-): NotificationService {
+) : NotificationService {
     override suspend fun createNotificationAndSend(
         userId: Long,
         type: NotificationType,

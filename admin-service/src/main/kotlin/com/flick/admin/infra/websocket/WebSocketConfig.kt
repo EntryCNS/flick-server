@@ -30,5 +30,6 @@ class WebSocketConfig(
     fun webSocketService(): WebSocketService = HandshakeWebSocketService(ReactorNettyRequestUpgradeStrategy())
 
     @Bean
-    fun handlerAdapter(webSocketService: WebSocketService): WebSocketHandlerAdapter = WebSocketHandlerAdapter(webSocketService)
+    fun handlerAdapter(webSocketService: WebSocketService): WebSocketHandlerAdapter =
+        WebSocketHandlerAdapter(webSocketService)
 }

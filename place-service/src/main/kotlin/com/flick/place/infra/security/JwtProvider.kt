@@ -5,7 +5,7 @@ import org.apache.hc.core5.http.HttpHeaders
 import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
-import java.util.Date
+import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -29,19 +29,23 @@ class JwtProvider(
 
     fun getType(token: String): JwtType {
         try {
-            return JwtType.valueOf(Jwts.parser()
-                .verifyWith(boothKey)
-                .build()
-                .parseSignedClaims(token)
-                .header
-                .type)
+            return JwtType.valueOf(
+                Jwts.parser()
+                    .verifyWith(boothKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .header
+                    .type
+            )
         } catch (e: Exception) {
-            return JwtType.valueOf(Jwts.parser()
-                .verifyWith(kioskKey)
-                .build()
-                .parseSignedClaims(token)
-                .header
-                .type)
+            return JwtType.valueOf(
+                Jwts.parser()
+                    .verifyWith(kioskKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .header
+                    .type
+            )
         }
     }
 

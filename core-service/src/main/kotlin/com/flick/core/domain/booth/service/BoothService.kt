@@ -5,8 +5,8 @@ import com.flick.core.domain.booth.dto.response.BoothDetailResponse
 import com.flick.core.domain.booth.dto.response.BoothResponse
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
-import com.flick.domain.payment.enums.ProductStatus
-import com.flick.domain.payment.repository.ProductRepository
+import com.flick.domain.product.enums.ProductStatus
+import com.flick.domain.product.repository.ProductRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList

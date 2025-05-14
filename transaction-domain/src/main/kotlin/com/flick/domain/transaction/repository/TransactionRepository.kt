@@ -9,7 +9,8 @@ import java.time.LocalDate
 interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Long> {
     fun findAllByUserIdOrderByCreatedAtDesc(userId: Long): Flow<TransactionEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT t.* FROM transactions t
         WHERE (:userId IS NULL OR t.user_id = :userId)
         AND (:type IS NULL OR t.type = CAST(:type AS text))
@@ -17,7 +18,8 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
         AND (:endDate IS NULL OR DATE(t.created_at) <= :endDate)
         ORDER BY t.created_at DESC
         LIMIT :limit OFFSET :offset
-    """)
+    """
+    )
     fun findByFilters(
         userId: Long?,
         type: String?,
@@ -27,13 +29,15 @@ interface TransactionRepository : CoroutineCrudRepository<TransactionEntity, Lon
         offset: Int
     ): Flow<TransactionEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM transactions t
         WHERE (:userId IS NULL OR t.user_id = :userId)
         AND (:type IS NULL OR t.type = CAST(:type AS text))
         AND (:startDate IS NULL OR DATE(t.created_at) >= :startDate)
         AND (:endDate IS NULL OR DATE(t.created_at) <= :endDate)
-    """)
+    """
+    )
     suspend fun countByFilters(
         userId: Long?,
         type: String?,

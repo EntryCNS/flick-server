@@ -49,10 +49,12 @@ class PaymentKafkaListener(
                     if (update.status == PaymentStatus.COMPLETED) {
                         val order = orderRepository.findById(paymentRequest.orderId)
                         order?.let {
-                            orderRepository.save(it.copy(
-                                status = OrderStatus.PAID,
-                                paidAt = update.processedAt
-                            ))
+                            orderRepository.save(
+                                it.copy(
+                                    status = OrderStatus.PAID,
+                                    paidAt = update.processedAt
+                                )
+                            )
                         }
                     }
                 }
@@ -90,9 +92,11 @@ class PaymentKafkaListener(
             runBlocking {
                 val order = orderRepository.findById(orderId)
                 order?.let {
-                    orderRepository.save(it.copy(
-                        status = OrderStatus.EXPIRED
-                    ))
+                    orderRepository.save(
+                        it.copy(
+                            status = OrderStatus.EXPIRED
+                        )
+                    )
 
                     val paymentRequests = paymentRequestRepository.findAllByOrderId(orderId)
                     paymentRequests.collect { request ->

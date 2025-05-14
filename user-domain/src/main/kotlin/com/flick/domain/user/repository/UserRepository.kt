@@ -2,6 +2,7 @@ package com.flick.domain.user.repository
 
 import com.flick.domain.user.entity.UserEntity
 import com.flick.domain.user.enums.UserRoleType
+import com.flick.domain.user.query.UserWithRoles
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
@@ -16,7 +17,8 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
         number: Int,
     ): UserEntity?
 
-    @Query("""
+    @Query(
+        """
         WITH RankedUsers AS (
             SELECT 
                 u.*,
@@ -35,7 +37,8 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
         FROM RankedUsers
         WHERE row_num > :offset
         AND row_num <= (:offset + :limit)
-    """)
+    """
+    )
     fun findAllByFilters(
         @Param("name") name: String?,
         @Param("grade") grade: Int?,
@@ -48,16 +51,3 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
     @Query("SELECT * FROM users WHERE id = :id FOR UPDATE SKIP LOCKED")
     suspend fun findOneByIdForUpdate(@Param("id") id: Long): UserEntity?
 }
-
-data class UserWithRoles(
-    val id: Long,
-    val name: String,
-    val email: String?,
-    val grade: Int?,
-    val room: Int?,
-    val number: Int?,
-    val balance: Long,
-    val roles: List<UserRoleType>,
-    val totalCount: Long,
-    val rowNum: Long
-)

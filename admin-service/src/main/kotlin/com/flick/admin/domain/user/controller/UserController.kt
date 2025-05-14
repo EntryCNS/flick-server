@@ -22,5 +22,6 @@ class UserController(private val userService: UserService) {
     suspend fun getUser(@PathVariable userId: Long) = userService.getUser(userId)
 
     @PostMapping("/{userId}/charge")
-    suspend fun chargeUserPoint(@PathVariable userId: Long, @RequestBody request: ChargeUserPointRequest) = userService.chargeUserPoint(userId, request)
+    suspend fun chargeUserPoint(@PathVariable userId: Long, @RequestBody request: ChargeUserPointRequest) =
+        userService.chargeUserPoint(userId, request)
 }

@@ -1,10 +1,10 @@
 package com.flick.place.domain.product.service
 
 import com.flick.common.error.CustomException
-import com.flick.domain.payment.entity.ProductEntity
-import com.flick.domain.payment.enums.ProductStatus
-import com.flick.domain.payment.error.ProductError
-import com.flick.domain.payment.repository.ProductRepository
+import com.flick.domain.product.entity.ProductEntity
+import com.flick.domain.product.enums.ProductStatus
+import com.flick.domain.product.error.ProductError
+import com.flick.domain.product.repository.ProductRepository
 import com.flick.place.domain.product.dto.request.CreateProductRequest
 import com.flick.place.domain.product.dto.request.UpdateProductRequest
 import com.flick.place.domain.product.dto.response.ProductResponse

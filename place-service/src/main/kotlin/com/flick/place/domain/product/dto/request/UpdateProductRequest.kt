@@ -1,6 +1,6 @@
 package com.flick.place.domain.product.dto.request
 
-import com.flick.domain.payment.enums.ProductStatus
+import com.flick.domain.product.enums.ProductStatus
 
 data class UpdateProductRequest(
     val name: String?,

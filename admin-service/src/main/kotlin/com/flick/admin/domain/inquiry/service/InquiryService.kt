@@ -29,6 +29,7 @@ class InquiryService(
                 inquiryRepository.findAll(page, size),
                 inquiryRepository.count()
             )
+
             else -> Pair(
                 inquiryRepository.findAllByCategory(category, size, offset),
                 inquiryRepository.countByCategory(category)

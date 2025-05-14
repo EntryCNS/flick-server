@@ -10,7 +10,8 @@ class BoothController(
     private val boothService: BoothService,
 ) {
     @GetMapping
-    suspend fun getBooths(@RequestParam("status") statuses: List<BoothStatus> = emptyList()) = boothService.getBooths(statuses)
+    suspend fun getBooths(@RequestParam("status") statuses: List<BoothStatus> = emptyList()) =
+        boothService.getBooths(statuses)
 
     @PostMapping("/{boothId}/approve")
     suspend fun approveBooth(@PathVariable boothId: Long) = boothService.approveBooth(boothId)

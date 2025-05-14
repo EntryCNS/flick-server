@@ -2,14 +2,14 @@ package com.flick.place.domain.order.service
 
 import com.flick.common.error.CustomException
 import com.flick.domain.order.entity.OrderEntity
-import com.flick.domain.payment.entity.OrderItemEntity
 import com.flick.domain.order.enums.OrderStatus
-import com.flick.domain.payment.enums.ProductStatus
 import com.flick.domain.order.error.OrderError
-import com.flick.domain.payment.error.ProductError
+import com.flick.domain.payment.entity.OrderItemEntity
+import com.flick.domain.product.enums.ProductStatus
+import com.flick.domain.product.error.ProductError
 import com.flick.domain.payment.repository.OrderItemRepository
 import com.flick.domain.payment.repository.OrderRepository
-import com.flick.domain.payment.repository.ProductRepository
+import com.flick.domain.product.repository.ProductRepository
 import com.flick.place.domain.order.dto.request.CreateOrderRequest
 import com.flick.place.domain.order.dto.response.OrderResponse
 import com.flick.place.infra.security.SecurityHolder
@@ -110,9 +110,11 @@ class OrderService(
             throw CustomException(OrderError.ORDER_NOT_PENDING)
         }
 
-        orderRepository.save(order.copy(
-            status = OrderStatus.CANCELED,
-        ))
+        orderRepository.save(
+            order.copy(
+                status = OrderStatus.CANCELED,
+            )
+        )
     }
 
     private fun OrderEntity.toResponse() = OrderResponse(

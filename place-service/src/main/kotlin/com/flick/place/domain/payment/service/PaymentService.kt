@@ -36,55 +36,57 @@ class PaymentService(
 ) {
     private val log = logger()
 
-    suspend fun createQrPayment(request: CreateQrPaymentRequest): CreateQrPaymentResponse = transactionalOperator.executeAndAwait {
-        val order = getPendingOrder(request.orderId)
-        val token = generatePaymentToken()
+    suspend fun createQrPayment(request: CreateQrPaymentRequest): CreateQrPaymentResponse =
+        transactionalOperator.executeAndAwait {
+            val order = getPendingOrder(request.orderId)
+            val token = generatePaymentToken()
 
-        val paymentRequest = paymentRequestRepository.save(
-            PaymentRequestEntity(
-                orderId = order.id!!,
-                method = PaymentMethod.QR_CODE,
-                token = token,
+            val paymentRequest = paymentRequestRepository.save(
+                PaymentRequestEntity(
+                    orderId = order.id!!,
+                    method = PaymentMethod.QR_CODE,
+                    token = token,
+                )
             )
-        )
 
-        CreateQrPaymentResponse(
-            id = paymentRequest.id!!,
-            token = token
-        )
-    }
-
-    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse = transactionalOperator.executeAndAwait {
-        val order = getPendingOrder(request.orderId)
-        val token = generatePaymentToken()
-
-        val paymentRequest = paymentRequestRepository.save(
-            PaymentRequestEntity(
-                orderId = order.id!!,
-                method = PaymentMethod.STUDENT_ID,
-                token = token,
-            )
-        )
-
-        val booth = boothRepository.findById(order.boothId)
-            ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
-
-        val user = userRepository.findByGradeAndRoomAndNumber(
-            grade = request.studentId.first().digitToInt(),
-            room = request.studentId[1].digitToInt(),
-            number = request.studentId.substring(2).toInt()
-        ) ?: throw CustomException(UserError.USER_NOT_FOUND)
-
-        CreateStudentIdPaymentResponse(id = paymentRequest.id!!).also {
-            sendPaymentRequestNotification(
-                userId = user.id!!,
-                orderId = order.id!!,
-                boothName = booth.name,
-                totalAmount = order.totalAmount,
+            CreateQrPaymentResponse(
+                id = paymentRequest.id!!,
                 token = token
             )
         }
-    }
+
+    suspend fun createStudentIdPayment(request: CreateStudentIdPaymentRequest): CreateStudentIdPaymentResponse =
+        transactionalOperator.executeAndAwait {
+            val order = getPendingOrder(request.orderId)
+            val token = generatePaymentToken()
+
+            val paymentRequest = paymentRequestRepository.save(
+                PaymentRequestEntity(
+                    orderId = order.id!!,
+                    method = PaymentMethod.STUDENT_ID,
+                    token = token,
+                )
+            )
+
+            val booth = boothRepository.findById(order.boothId)
+                ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
+
+            val user = userRepository.findByGradeAndRoomAndNumber(
+                grade = request.studentId.first().digitToInt(),
+                room = request.studentId[1].digitToInt(),
+                number = request.studentId.substring(2).toInt()
+            ) ?: throw CustomException(UserError.USER_NOT_FOUND)
+
+            CreateStudentIdPaymentResponse(id = paymentRequest.id!!).also {
+                sendPaymentRequestNotification(
+                    userId = user.id!!,
+                    orderId = order.id!!,
+                    boothName = booth.name,
+                    totalAmount = order.totalAmount,
+                    token = token
+                )
+            }
+        }
 
     private suspend fun getPendingOrder(orderId: Long): OrderEntity {
         val order = orderRepository.findByIdAndBoothId(orderId, securityHolder.getBoothId())

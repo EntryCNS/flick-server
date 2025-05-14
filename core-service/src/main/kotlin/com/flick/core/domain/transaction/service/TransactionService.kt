@@ -8,10 +8,10 @@ import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.order.error.OrderError
 import com.flick.domain.order.error.OrderItemError
-import com.flick.domain.payment.error.ProductError
+import com.flick.domain.product.error.ProductError
 import com.flick.domain.payment.repository.OrderItemRepository
 import com.flick.domain.payment.repository.OrderRepository
-import com.flick.domain.payment.repository.ProductRepository
+import com.flick.domain.product.repository.ProductRepository
 import com.flick.domain.transaction.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

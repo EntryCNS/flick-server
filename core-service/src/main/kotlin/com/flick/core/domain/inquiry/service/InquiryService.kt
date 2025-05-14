@@ -11,11 +11,13 @@ class InquiryService(private val securityHolder: SecurityHolder, private val inq
     suspend fun createInquiry(request: CreateInquiryRequest) {
         val userId = securityHolder.getUserId()
 
-        inquiryRepository.save(InquiryEntity(
-            userId = userId,
-            title = request.title,
-            content = request.content,
-            category = request.category
-        ))
+        inquiryRepository.save(
+            InquiryEntity(
+                userId = userId,
+                title = request.title,
+                content = request.content,
+                category = request.category
+            )
+        )
     }
 }

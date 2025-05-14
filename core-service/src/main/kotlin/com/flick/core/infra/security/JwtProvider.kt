@@ -5,7 +5,7 @@ import org.apache.hc.core5.http.HttpHeaders
 import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.stereotype.Component
 import java.nio.charset.StandardCharsets
-import java.util.Date
+import java.util.*
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
@@ -20,20 +20,22 @@ class JwtProvider(
         )
     }
 
-    fun getType(token: String) =  JwtType.valueOf(Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .header
-                .type)
+    fun getType(token: String) = JwtType.valueOf(
+        Jwts.parser()
+            .verifyWith(key)
+            .build()
+            .parseSignedClaims(token)
+            .header
+            .type
+    )
 
     fun getUserId(token: String) = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .payload
-                .subject
-                .toLong()
+        .verifyWith(key)
+        .build()
+        .parseSignedClaims(token)
+        .payload
+        .subject
+        .toLong()
 
     fun resolveToken(request: ServerHttpRequest) =
         request.headers.getFirst(HttpHeaders.AUTHORIZATION)?.removePrefix("Bearer ")

@@ -1,7 +1,6 @@
 package com.flick.core.domain.transaction.dto.response
 
 import com.flick.domain.transaction.enums.TransactionType
-import kotlinx.coroutines.flow.Flow
 import java.time.LocalDateTime
 
 data class TransactionDetailResponse(

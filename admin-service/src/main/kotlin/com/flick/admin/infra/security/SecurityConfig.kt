@@ -26,35 +26,37 @@ class SecurityConfig {
     }
 
     @Bean
-    fun configure(http: ServerHttpSecurity, jwtAuthenticationFilter: JwtAuthenticationFilter): SecurityWebFilterChain = http
-        .cors { it.disable() }
-        .httpBasic { it.disable() }
-        .formLogin { it.disable() }
-        .csrf { it.disable() }
-        .logout { it.disable() }
-        .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
-        .exceptionHandling {
-            it.authenticationEntryPoint { exchange, _ ->
-                Mono.fromRunnable {
-                    exchange.response.statusCode = HttpStatus.UNAUTHORIZED
+    fun configure(http: ServerHttpSecurity, jwtAuthenticationFilter: JwtAuthenticationFilter): SecurityWebFilterChain =
+        http
+            .cors { it.disable() }
+            .httpBasic { it.disable() }
+            .formLogin { it.disable() }
+            .csrf { it.disable() }
+            .logout { it.disable() }
+            .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+            .exceptionHandling {
+                it.authenticationEntryPoint { exchange, _ ->
+                    Mono.fromRunnable {
+                        exchange.response.statusCode = HttpStatus.UNAUTHORIZED
+                    }
+                }
+                it.accessDeniedHandler { exchange, _ ->
+                    Mono.fromRunnable {
+                        exchange.response.statusCode = HttpStatus.FORBIDDEN
+                    }
                 }
             }
-            it.accessDeniedHandler { exchange, _ ->
-                Mono.fromRunnable {
-                    exchange.response.statusCode = HttpStatus.FORBIDDEN
-                }
+            .authorizeExchange {
+                it
+                    .pathMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                    .pathMatchers(HttpMethod.GET, "/ws/**").permitAll()
+
+                    .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                    .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+
+                    .anyExchange().hasRole(ADMIN)
             }
-        }
-        .authorizeExchange { it
-            .pathMatchers(HttpMethod.GET ,"/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
-            .pathMatchers(HttpMethod.GET, "/ws/**").permitAll()
-
-            .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
-            .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
-
-            .anyExchange().hasRole(ADMIN)
-        }
-        .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-        .build()
+            .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+            .build()
 }

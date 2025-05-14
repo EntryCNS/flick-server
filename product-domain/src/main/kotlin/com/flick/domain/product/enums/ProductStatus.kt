@@ -1,4 +1,4 @@
-package com.flick.domain.payment.enums
+package com.flick.domain.product.enums
 
 enum class ProductStatus {
     AVAILABLE, SOLD_OUT, HIDDEN

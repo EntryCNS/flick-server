@@ -1,6 +1,6 @@
 package com.flick.place.domain.product.dto.response
 
-import com.flick.domain.payment.enums.ProductStatus
+import com.flick.domain.product.enums.ProductStatus
 import java.time.LocalDateTime
 
 data class ProductResponse(

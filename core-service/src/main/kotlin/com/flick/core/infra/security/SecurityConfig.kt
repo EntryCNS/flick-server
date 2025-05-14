@@ -50,26 +50,27 @@ class SecurityConfig {
                 }
             }
         }
-        .authorizeExchange { it
-            .pathMatchers(HttpMethod.GET ,"/swagger-ui/**", "/v3/api-docs/**").permitAll()
+        .authorizeExchange {
+            it
+                .pathMatchers(HttpMethod.GET, "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-            .pathMatchers(HttpMethod.GET, "/ws/**").permitAll()
+                .pathMatchers(HttpMethod.GET, "/ws/**").permitAll()
 
-            .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
-            .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+                .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
-            .pathMatchers(HttpMethod.GET, "/users/me/balance").authenticated()
+                .pathMatchers(HttpMethod.GET, "/users/me/balance").authenticated()
 
-            .pathMatchers(HttpMethod.POST, "/payments/requests/confirm").authenticated()
+                .pathMatchers(HttpMethod.POST, "/payments/requests/confirm").authenticated()
 
-            .pathMatchers(HttpMethod.GET, "/notices").authenticated()
+                .pathMatchers(HttpMethod.GET, "/notices").authenticated()
 
-            .pathMatchers(HttpMethod.GET, "/booths").authenticated()
+                .pathMatchers(HttpMethod.GET, "/booths").authenticated()
 
-            .pathMatchers(HttpMethod.GET, "/transactions/my").authenticated()
-            .pathMatchers(HttpMethod.GET, "/transactions/{transactionId}").authenticated()
+                .pathMatchers(HttpMethod.GET, "/transactions/my").authenticated()
+                .pathMatchers(HttpMethod.GET, "/transactions/{transactionId}").authenticated()
 
-            .anyExchange().authenticated()
+                .anyExchange().authenticated()
         }
         .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
         .build()

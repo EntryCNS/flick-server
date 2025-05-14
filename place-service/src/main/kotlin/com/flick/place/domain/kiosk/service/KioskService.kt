@@ -27,17 +27,18 @@ class KioskService(
         private val KIOSK_TOKEN_EXPIRATION = Duration.ofMinutes(5)
     }
 
-    suspend fun generateKioskRegistrationToken(): GenerateKioskRegistrationTokenResponse = transactionalOperator.executeAndAwait {
-        val boothId = securityHolder.getBoothId()
-        val token = (1..20).map { (('a'..'z') + ('0'..'9')).random() }.joinToString("")
+    suspend fun generateKioskRegistrationToken(): GenerateKioskRegistrationTokenResponse =
+        transactionalOperator.executeAndAwait {
+            val boothId = securityHolder.getBoothId()
+            val token = (1..20).map { (('a'..'z') + ('0'..'9')).random() }.joinToString("")
 
-        val key = "$KIOSK_TOKEN_PREFIX:$token"
-        redisTemplate.opsForValue().set(key, boothId.toString())
-            .then(redisTemplate.expire(key, KIOSK_TOKEN_EXPIRATION))
-            .awaitSingle()
+            val key = "$KIOSK_TOKEN_PREFIX:$token"
+            redisTemplate.opsForValue().set(key, boothId.toString())
+                .then(redisTemplate.expire(key, KIOSK_TOKEN_EXPIRATION))
+                .awaitSingle()
 
-        GenerateKioskRegistrationTokenResponse(registrationToken = token)
-    }
+            GenerateKioskRegistrationTokenResponse(registrationToken = token)
+        }
 
     suspend fun register(request: RegisterKioskRequest): JwtPayload = transactionalOperator.executeAndAwait {
         val key = "$KIOSK_TOKEN_PREFIX:${request.registrationToken}"

@@ -4,34 +4,28 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.flick.common.error.CustomException
 import com.flick.core.domain.payment.dto.*
 import com.flick.core.infra.security.SecurityHolder
-import com.flick.domain.booth.entity.BoothEntity
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
+import com.flick.domain.order.entity.OrderEntity
+import com.flick.domain.order.enums.OrderStatus
+import com.flick.domain.order.error.OrderError
 import com.flick.domain.payment.entity.PaymentEntity
 import com.flick.domain.payment.entity.PaymentRequestEntity
-import com.flick.domain.payment.enums.PaymentStatus
-import com.flick.domain.order.entity.OrderEntity
-import com.flick.domain.order.error.OrderError
-import com.flick.domain.order.enums.OrderStatus
 import com.flick.domain.payment.enums.PaymentMethod
+import com.flick.domain.payment.enums.PaymentStatus
+import com.flick.domain.payment.error.PaymentRequestError
 import com.flick.domain.payment.repository.OrderRepository
 import com.flick.domain.payment.repository.PaymentRepository
 import com.flick.domain.payment.repository.PaymentRequestRepository
-import com.flick.domain.user.entity.UserEntity
-import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.transaction.entity.TransactionEntity
 import com.flick.domain.transaction.enums.TransactionType
 import com.flick.domain.transaction.repository.TransactionRepository
-import com.flick.domain.payment.error.PaymentRequestError
+import com.flick.domain.user.entity.UserEntity
 import com.flick.domain.user.error.UserError
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.flick.domain.user.repository.UserRepository
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.kafka.core.KafkaTemplate
-import org.springframework.retry.annotation.Retryable
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Isolation
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDateTime
@@ -153,13 +147,21 @@ class PaymentRequestService(
         val booth = boothRepository.findById(updatedOrder.boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
-        val updatedBooth = boothRepository.save(booth.copy(
-            totalSales = booth.totalSales + order.totalAmount,
-            updatedAt = now
-        ))
+        val updatedBooth = boothRepository.save(
+            booth.copy(
+                totalSales = booth.totalSales + order.totalAmount,
+                updatedAt = now
+            )
+        )
 
         sendBoothSalesUpdatedEvent(booth.id!!, updatedBooth.totalSales)
-        sendPaymentStatusUpdate(paymentRequest.id!!, order.id!!, PaymentStatus.COMPLETED, paymentRequest.method, order.totalAmount)
+        sendPaymentStatusUpdate(
+            paymentRequest.id!!,
+            order.id!!,
+            PaymentStatus.COMPLETED,
+            paymentRequest.method,
+            order.totalAmount
+        )
         sendOrderCompletedNotification(userId, order.id!!, booth.name, order.totalAmount)
     }
 
@@ -171,7 +173,13 @@ class PaymentRequestService(
         kafkaTemplate.send("booth-sales-updated", objectMapper.writeValueAsString(event))
     }
 
-    private fun sendPaymentStatusUpdate(requestId: Long, orderId: Long, status: PaymentStatus, paymentMethod: PaymentMethod?, amount: Long?) {
+    private fun sendPaymentStatusUpdate(
+        requestId: Long,
+        orderId: Long,
+        status: PaymentStatus,
+        paymentMethod: PaymentMethod?,
+        amount: Long?
+    ) {
         val event = PaymentStatusUpdateEvent(
             requestId = requestId,
             orderId = orderId,

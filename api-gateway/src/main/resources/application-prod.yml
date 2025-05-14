@@ -33,7 +33,7 @@ spring:
           predicates:
             - Path=/place/ws/**
           filters:
-            -  StripPrefix=1
+            - StripPrefix=1
 
         - id: core-service
           uri: http://core-service:8080

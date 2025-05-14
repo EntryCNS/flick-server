@@ -38,24 +38,28 @@ class GlobalErrorWebExceptionHandler(private val objectMapper: ObjectMapper) : E
                 message = ex.message ?: "알 수 없는 오류",
                 path = path
             )
+
             is ResponseStatusException -> ErrorResponse(
                 status = ex.statusCode.value(),
                 code = ex.statusCode.toString(),
                 message = ex.reason ?: "알 수 없는 오류",
                 path = path
             )
+
             is ServerWebInputException -> ErrorResponse(
                 status = HttpStatus.BAD_REQUEST.value(),
                 code = "INVALID_INPUT",
                 message = ex.reason ?: "잘못된 입력값",
                 path = path
             )
+
             is IllegalArgumentException -> ErrorResponse(
                 status = HttpStatus.BAD_REQUEST.value(),
                 code = "INVALID_ENUM",
                 message = ex.message ?: "잘못된 enum",
                 path = path
             )
+
             else -> ErrorResponse(
                 status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 code = "INTERNAL_SERVER_ERROR",

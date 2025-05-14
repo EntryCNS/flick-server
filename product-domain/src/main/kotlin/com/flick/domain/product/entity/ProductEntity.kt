@@ -1,6 +1,6 @@
-package com.flick.domain.payment.entity
+package com.flick.domain.product.entity
 
-import com.flick.domain.payment.enums.ProductStatus
+import com.flick.domain.product.enums.ProductStatus
 import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.LastModifiedDate
