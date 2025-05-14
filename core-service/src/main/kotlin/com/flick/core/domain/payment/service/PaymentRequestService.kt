@@ -147,14 +147,7 @@ class PaymentRequestService(
         val booth = boothRepository.findById(updatedOrder.boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
-        val updatedBooth = boothRepository.save(
-            booth.copy(
-                totalSales = booth.totalSales + order.totalAmount,
-                updatedAt = now
-            )
-        )
-
-        sendBoothSalesUpdatedEvent(booth.id!!, updatedBooth.totalSales)
+        sendBoothSalesUpdatedEvent(booth.id!!, booth.totalSales)
         sendPaymentStatusUpdate(
             paymentRequest.id!!,
             order.id!!,
