@@ -4,6 +4,7 @@ import com.flick.common.utils.logger
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.util.concurrent.ConcurrentHashMap
@@ -72,12 +73,15 @@ class PaymentWebSocketHandler : WebSocketHandler {
 
         log.info("Broadcasting to ${sessions.size} sessions for payment-request/$requestId")
 
-        sessions.forEach { session ->
-            session.send(Mono.just(session.textMessage(message)))
-                .subscribe(
-                    {},
-                    { err -> log.error("Failed to send WebSocket message: ${err.message}") }
-                )
-        }
+        Flux.fromIterable(sessions)
+            .flatMap(
+                { session ->
+                    session.send(Mono.just(session.textMessage(message)))
+                        .doOnError { e -> log.error("Failed to send WebSocket message: ${e.message}") }
+                        .onErrorResume { Mono.empty() }
+                },
+                8
+            )
+            .subscribe()
     }
 }

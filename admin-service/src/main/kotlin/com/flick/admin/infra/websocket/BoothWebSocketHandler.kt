@@ -6,6 +6,7 @@ import com.flick.common.utils.logger
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.util.concurrent.ConcurrentHashMap
@@ -44,20 +45,23 @@ class BoothWebSocketHandler(
         }
     }
 
-    fun sendRankingUpdate(ranking: List<BoothRankingResponse>) {
+    fun sendRankingUpdate(rankings: List<BoothRankingResponse>) {
         log.info("Sending booth ranking update to ${sessions.size} sessions")
-        sink.tryEmitNext(ranking)
+        sink.tryEmitNext(rankings)
     }
 
-    private fun notifyAllSessions(ranking: List<BoothRankingResponse>) {
-        val message = objectMapper.writeValueAsString(ranking)
+    private fun notifyAllSessions(rankings: List<BoothRankingResponse>) {
+        val message = objectMapper.writeValueAsString(rankings)
 
-        sessions.forEach { session ->
-            session.send(Mono.just(session.textMessage(message)))
-                .subscribe(
-                    {},
-                    { e -> log.error("Failed to send ranking: ${e.message}") }
-                )
-        }
+        Flux.fromIterable(sessions)
+            .flatMap(
+                { session ->
+                    session.send(Mono.just(session.textMessage(message)))
+                        .doOnError { e -> log.error("Failed to send ranking: ${e.message}") }
+                        .onErrorResume { Mono.empty() }
+                },
+                8
+            )
+            .subscribe()
     }
 }

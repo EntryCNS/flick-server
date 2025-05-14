@@ -18,4 +18,7 @@ class BoothController(
 
     @PostMapping("/{boothId}/reject")
     suspend fun rejectBooth(@PathVariable boothId: Long) = boothService.rejectBooth(boothId)
+
+    @GetMapping("/rankings")
+    suspend fun getBoothRankings() = boothService.getBoothRankings()
 }
