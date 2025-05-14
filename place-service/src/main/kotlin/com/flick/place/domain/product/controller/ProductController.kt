@@ -20,13 +20,17 @@ class ProductController(private val productService: ProductService) {
     suspend fun getProduct(@PathVariable productId: Long): ProductResponse = productService.getProduct(productId)
 
     @PostMapping
-    suspend fun createProduct(@RequestBody request: CreateProductRequest) = productService.createProduct(request)
+    suspend fun createProduct(@RequestBody request: CreateProductRequest) {
+        productService.createProduct(request)
+    }
 
     @PatchMapping("/{productId}")
     suspend fun updateProduct(
         @PathVariable productId: Long,
         @RequestBody request: UpdateProductRequest
-    ) = productService.updateProduct(productId, request)
+    ) {
+        productService.updateProduct(productId, request)
+    }
 
     @DeleteMapping("/{productId}")
     suspend fun deleteProduct(@PathVariable productId: Long) = productService.deleteProduct(productId)

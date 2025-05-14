@@ -16,7 +16,9 @@ class AuthController(private val authService: AuthService) {
     suspend fun login(@RequestBody request: LoginRequest) = authService.login(request)
 
     @PostMapping("/register")
-    suspend fun register(@RequestBody request: RegisterRequest) = authService.register(request)
+    suspend fun register(@RequestBody request: RegisterRequest) {
+        authService.register(request)
+    }
 
     @PostMapping("/refresh")
     fun refresh(@RequestBody request: RefreshRequest) = authService.refresh(request)
