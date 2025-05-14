@@ -14,10 +14,14 @@ class BoothController(
         boothService.getBooths(statuses)
 
     @PostMapping("/{boothId}/approve")
-    suspend fun approveBooth(@PathVariable boothId: Long) = boothService.approveBooth(boothId)
+    suspend fun approveBooth(@PathVariable boothId: Long) {
+        boothService.approveBooth(boothId)
+    }
 
     @PostMapping("/{boothId}/reject")
-    suspend fun rejectBooth(@PathVariable boothId: Long) = boothService.rejectBooth(boothId)
+    suspend fun rejectBooth(@PathVariable boothId: Long) {
+        boothService.rejectBooth(boothId)
+    }
 
     @GetMapping("/rankings")
     suspend fun getBoothRankings() = boothService.getBoothRankings()

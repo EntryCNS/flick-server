@@ -17,5 +17,7 @@ class OrderController(private val orderService: OrderService) {
     suspend fun createOrder(@RequestBody request: CreateOrderRequest) = orderService.createOrder(request)
 
     @PostMapping("/{orderId}/cancel")
-    suspend fun cancelOrder(@PathVariable orderId: Long) = orderService.cancelOrder(orderId)
+    suspend fun cancelOrder(@PathVariable orderId: Long) {
+        orderService.cancelOrder(orderId)
+    }
 }
