@@ -10,7 +10,7 @@ import java.time.LocalDate
 class TransactionController(private val transactionService: TransactionService) {
     @GetMapping
     suspend fun getTransactions(
-        @RequestParam(defaultValue = "1") page: Int,
+        @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
         @RequestParam userId: Long?,
         @RequestParam type: TransactionType?,

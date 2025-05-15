@@ -46,7 +46,7 @@ class TransactionService(
         endDate: LocalDate?
     ): Page<TransactionResponse> {
         val typeStr = type?.name
-        val offset = (page - 1) * size
+        val offset = page * size
 
         val transactions = transactionRepository.findByFilters(
             userId, typeStr, startDate, endDate, size, offset
