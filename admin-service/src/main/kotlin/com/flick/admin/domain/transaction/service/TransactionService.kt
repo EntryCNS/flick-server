@@ -50,6 +50,8 @@ class TransactionService(
             when (transaction.type) {
                 TransactionType.CHARGE -> createChargeTransactionResponse(transaction)
                 TransactionType.PAYMENT -> createPaymentTransactionResponse(transaction)
+                TransactionType.TRANSFER_IN -> createTransferInTransactionResponse(transaction)
+                TransactionType.TRANSFER_OUT -> createTransferOutTransactionResponse(transaction)
             }
         }.toList()
 
@@ -70,6 +72,8 @@ class TransactionService(
         when (transaction.type) {
             TransactionType.CHARGE -> createChargeTransactionDetailResponse(transaction)
             TransactionType.PAYMENT -> createPaymentTransactionDetailResponse(transaction)
+            TransactionType.TRANSFER_IN -> createTransferInTransactionDetailResponse(transaction)
+            TransactionType.TRANSFER_OUT -> createTransferOutTransactionDetailResponse(transaction)
         }
     }
 
@@ -156,6 +160,52 @@ class TransactionService(
             }
         )
     }
+
+    private suspend fun createTransferOutTransactionResponse(
+        transaction: TransactionEntity
+    ) = TransactionResponse(
+        id = transaction.id!!,
+        userId = transaction.userId,
+        type = transaction.type,
+        amount = transaction.amount,
+        balanceAfter = transaction.balanceAfter,
+        memo = transaction.memo,
+        createdAt = transaction.createdAt
+    )
+
+    private suspend fun createTransferInTransactionResponse(
+        transaction: TransactionEntity
+    ) = TransactionResponse(
+        id = transaction.id!!,
+        userId = transaction.userId,
+        type = transaction.type,
+        amount = transaction.amount,
+        balanceAfter = transaction.balanceAfter,
+        memo = transaction.memo,
+        createdAt = transaction.createdAt
+    )
+
+    private suspend fun createTransferInTransactionDetailResponse(
+        transaction: TransactionEntity
+    ) = TransactionDetailResponse(
+        id = transaction.id!!,
+        userId = transaction.userId,
+        type = transaction.type,
+        amount = transaction.amount,
+        balanceAfter = transaction.balanceAfter,
+        createdAt = transaction.createdAt
+    )
+
+    private suspend fun createTransferOutTransactionDetailResponse(
+        transaction: TransactionEntity
+    ) = TransactionDetailResponse(
+        id = transaction.id!!,
+        userId = transaction.userId,
+        type = transaction.type,
+        amount = transaction.amount,
+        balanceAfter = transaction.balanceAfter,
+        createdAt = transaction.createdAt
+    )
 
     private suspend fun createProductInfo(orderItems: List<OrderItemEntity>): TransactionResponse.Product = when {
         orderItems.isEmpty() -> TransactionResponse.Product(name = "제품 정보 없음")

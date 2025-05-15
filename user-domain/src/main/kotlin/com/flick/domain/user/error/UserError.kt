@@ -9,4 +9,7 @@ enum class UserError(override val status: HttpStatus, override val message: Stri
     PERMISSION_DENIED(HttpStatus.FORBIDDEN, "Permission denied"),
 
     INVALID_ROLE_TYPE(HttpStatus.BAD_REQUEST, "Invalid user role"),
+    NOT_ENOUGH_BALANCE(HttpStatus.BAD_REQUEST, "Not enough balance"),
+    INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "Invalid amount"),
+    SELF_TRANSFER_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "Self transfer not allowed"),
 }

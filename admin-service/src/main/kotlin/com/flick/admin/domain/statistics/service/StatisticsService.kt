@@ -13,7 +13,6 @@ class StatisticsService(
     private val transactionRepository: TransactionRepository
 ) {
     suspend fun getStatistics(): StatisticsResponse {
-
         val allUsers = userRepository.findAll().toList()
 
         val allTransactions = transactionRepository.findAll().toList()
