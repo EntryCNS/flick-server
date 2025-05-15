@@ -12,22 +12,22 @@ interface InquiryRepository : CoroutineCrudRepository<InquiryEntity, Long> {
         """
         SELECT * FROM inquiries
         ORDER BY id DESC
-        LIMIT :limit OFFSET :offset
+        LIMIT :size OFFSET :offset
         """
     )
-    fun findAll(@Param("limit") limit: Int, @Param("offset") offset: Int): Flow<InquiryEntity>
+    fun findAll(@Param("size") size: Int, @Param("offset") offset: Int): Flow<InquiryEntity>
 
     @Query(
         """
         SELECT * FROM inquiries
         WHERE category = :category
         ORDER BY id DESC
-        LIMIT :limit OFFSET :offset
+        LIMIT :size OFFSET :offset
         """
     )
     fun findAllByCategory(
         @Param("category") category: InquiryCategory,
-        @Param("limit") limit: Int,
+        @Param("size") size: Int,
         @Param("offset") offset: Int
     ): Flow<InquiryEntity>
 

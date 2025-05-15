@@ -36,7 +36,7 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
         SELECT *
         FROM RankedUsers
         WHERE row_num > :offset
-        AND row_num <= (:offset + :limit)
+        AND row_num <= (:offset + :size)
     """
     )
     fun findAllByFilters(
@@ -44,7 +44,7 @@ interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
         @Param("grade") grade: Int?,
         @Param("room") room: Int?,
         @Param("role") role: UserRoleType?,
-        @Param("limit") limit: Int,
+        @Param("size") size: Int,
         @Param("offset") offset: Int
     ): Flow<UserWithRoles>
 
