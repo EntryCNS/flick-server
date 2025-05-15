@@ -91,6 +91,7 @@ class NoticeService(
                 notice.copy(
                     title = request.title ?: notice.title,
                     content = request.content ?: notice.content,
+                    isPinned = request.isPinned ?: notice.isPinned
                 )
             )
         }
