@@ -17,7 +17,7 @@ class BoothWebSocketHandler(
 ) : WebSocketHandler {
     private val log = logger()
     private val sessions = ConcurrentHashMap.newKeySet<WebSocketSession>()
-    private val sink = Sinks.many().multicast().onBackpressureBuffer<List<BoothRankingResponse>>()
+    private val sink = Sinks.many().multicast().onBackpressureBuffer<BoothRankingResponse>()
 
     init {
         sink.asFlux()
@@ -45,13 +45,13 @@ class BoothWebSocketHandler(
         }
     }
 
-    fun sendRankingUpdate(rankings: List<BoothRankingResponse>) {
+    fun sendRankingUpdate(ranking: BoothRankingResponse) {
         log.info("Sending booth ranking update to ${sessions.size} sessions")
-        sink.tryEmitNext(rankings)
+        sink.tryEmitNext(ranking)
     }
 
-    private fun notifyAllSessions(rankings: List<BoothRankingResponse>) {
-        val message = objectMapper.writeValueAsString(rankings)
+    private fun notifyAllSessions(ranking: BoothRankingResponse) {
+        val message = objectMapper.writeValueAsString(ranking)
 
         Flux.fromIterable(sessions)
             .flatMap(

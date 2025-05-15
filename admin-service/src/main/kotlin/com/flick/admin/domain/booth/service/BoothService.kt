@@ -46,19 +46,14 @@ class BoothService(
         boothRepository.save(getBooth(boothId).copy(status = BoothStatus.REJECTED))
     }
 
-    suspend fun publishRankings() {
-        val current = getCurrentRankings()
+    suspend fun publishRanking(boothId: Long) {
+        val booth = getBooth(boothId)
 
-        val previousMap = rankingCache.previous.associateBy { it.id }
-        val changed = current.filter { currentItem ->
-            val previousItem = previousMap[currentItem.id]
-            previousItem == null || previousItem.rank != currentItem.rank || previousItem.totalSales != currentItem.totalSales
-        }
-
-        if (changed.isNotEmpty()) {
-            boothWebSocketHandler.sendRankingUpdate(changed)
-            rankingCache.previous = current
-        }
+        boothWebSocketHandler.sendRankingUpdate(BoothRankingResponse(
+            id = booth.id!!,
+            totalSales = booth.totalSales,
+            name = booth.name,
+        ))
     }
 
     suspend fun getBoothRankings() = getCurrentRankings()
@@ -67,12 +62,11 @@ class BoothService(
         boothRepository.findById(boothId) ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
 
     private suspend fun getCurrentRankings() = boothRepository.findAllByOrderByTotalSalesDesc().toList()
-        .mapIndexed { index, booth ->
+        .map {
             BoothRankingResponse(
-                rank = index + 1,
-                id = booth.id!!,
-                name = booth.name,
-                totalSales = booth.totalSales,
+                id = it.id!!,
+                totalSales = it.totalSales,
+                name = it.name,
             )
         }
 }

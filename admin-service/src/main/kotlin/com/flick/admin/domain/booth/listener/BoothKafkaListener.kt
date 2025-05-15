@@ -23,7 +23,7 @@ class BoothKafkaListener(
             log.info("Received booth sales update: boothId=${event.boothId}, totalSales=${event.totalSales}")
 
             runBlocking {
-                boothService.publishRankings()
+                boothService.publishRanking(event.boothId)
             }
         } catch (e: Exception) {
             log.error("Failed to process booth-sales-updated: $message", e)
