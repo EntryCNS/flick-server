@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.reactive.executeAndAwait
+import java.time.LocalDateTime
 
 @Service
 class BoothService(
@@ -53,6 +54,7 @@ class BoothService(
             id = booth.id!!,
             totalSales = booth.totalSales,
             name = booth.name,
+            timestamp = LocalDateTime.now(),
         ))
     }
 
@@ -67,6 +69,7 @@ class BoothService(
                 id = it.id!!,
                 totalSales = it.totalSales,
                 name = it.name,
+                timestamp = LocalDateTime.now(),
             )
         }
 }
