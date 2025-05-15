@@ -77,6 +77,7 @@ class SecurityConfig(
                 .pathMatchers(HttpMethod.POST, "/auth/register").permitAll()
                 .pathMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
 
+                .pathMatchers(HttpMethod.POST, "/kiosks/login").permitAll()
                 .pathMatchers(HttpMethod.POST, "/kiosks/generate").hasRole(BOOTH)
                 .pathMatchers(HttpMethod.POST, "/kiosks/register").permitAll()
 

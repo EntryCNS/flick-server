@@ -1,5 +1,6 @@
 package com.flick.place.domain.kiosk.controller
 
+import com.flick.place.domain.kiosk.dto.request.LoginKioskRequest
 import com.flick.place.domain.kiosk.dto.request.RegisterKioskRequest
 import com.flick.place.domain.kiosk.service.KioskService
 import org.springframework.web.bind.annotation.PostMapping
@@ -10,6 +11,9 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/kiosks")
 class KioskController(private val kioskService: KioskService) {
+    @PostMapping("/login")
+    suspend fun login(@RequestBody request: LoginKioskRequest) = kioskService.login(request)
+
     @PostMapping("/generate")
     suspend fun generateKioskRegistrationToken() = kioskService.generateKioskRegistrationToken()
 
