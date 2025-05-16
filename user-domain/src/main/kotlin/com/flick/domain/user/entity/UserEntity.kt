@@ -31,7 +31,7 @@ data class UserEntity(
     val number: Int? = null,
 
     @Column("balance")
-    val balance: Long = 0L,
+    val balance: Long = 1000L,
 
     @Column("push_token")
     val pushToken: String? = null,

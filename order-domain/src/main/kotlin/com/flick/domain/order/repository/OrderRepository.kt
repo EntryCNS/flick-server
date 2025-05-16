@@ -9,6 +9,7 @@ import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 interface OrderRepository : CoroutineCrudRepository<OrderEntity, Long> {
     fun findAllByBoothId(boothId: Long): Flow<OrderEntity>
     suspend fun findByIdAndBoothId(id: Long, boothId: Long): OrderEntity?
+    suspend fun countByBoothIdAndStatus(boothId: Long, status: OrderStatus): Long
 
     @Query("SELECT * FROM orders WHERE status = 'PAID' ORDER BY booth_id, paid_at DESC")
     fun findByStatusPaid(): Flow<OrderEntity>

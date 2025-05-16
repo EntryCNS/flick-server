@@ -10,5 +10,7 @@ interface NotificationRepository : CoroutineCrudRepository<NotificationEntity, L
     suspend fun findByIdAndUserId(id: Long, userId: Long): NotificationEntity?
 
     @Query("SELECT type, COUNT(*) as count FROM notifications GROUP BY type ORDER BY count DESC")
-    suspend fun countGroupByType(): List<Map<String, Any>>
+    fun countGroupByType(): Flow<TypeCount>
 }
+
+data class TypeCount(val type: String, val count: Long)

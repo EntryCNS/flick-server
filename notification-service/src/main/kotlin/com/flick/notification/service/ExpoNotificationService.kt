@@ -12,6 +12,7 @@ import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.reactive.executeAndAwait
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
+import com.flick.common.utils.logger
 
 @Service
 class ExpoNotificationService(
@@ -21,6 +22,8 @@ class ExpoNotificationService(
     private val webClient: WebClient,
     private val transactionalOperator: TransactionalOperator
 ) : NotificationService {
+    private val log = logger()
+
     override suspend fun createNotificationAndSend(
         userId: Long,
         type: NotificationType,
@@ -40,16 +43,27 @@ class ExpoNotificationService(
 
             notificationRepository.save(notification)
 
-            val user = userRepository.findById(userId) ?: return@executeAndAwait null
-            val pushToken = user.pushToken ?: return@executeAndAwait null
+            val user = userRepository.findById(userId)
+
+            if (user == null) {
+                log.error("User not found: $userId")
+                return@executeAndAwait null
+            }
+
+            val pushToken = user.pushToken
+
+            if (pushToken == null) {
+                log.error("Push token not found for user: $userId")
+                return@executeAndAwait null
+            }
 
             notification to pushToken
         } ?: return
 
-        sendExpoPushNotification(notification.second, type, title, body, data)
+        sendPushNotification(notification.second, type, title, body, data)
     }
 
-    private suspend fun sendExpoPushNotification(
+    private suspend fun sendPushNotification(
         token: String,
         type: NotificationType,
         title: String,
@@ -77,15 +91,33 @@ class ExpoNotificationService(
             "body" to body,
             "data" to dataMap,
             "sound" to "default",
-            "priority" to "high"
+            "priority" to "high",
+            "channelId" to getChannelId(type)
         )
 
-        webClient.post()
-            .uri("https://exp.host/--/api/v2/push/send")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(Mono.just(requestBody), Map::class.java)
-            .retrieve()
-            .bodyToMono(Map::class.java)
-            .awaitSingle()
+        try {
+            log.info("Sending push notification: $requestBody")
+
+            val response = webClient.post()
+                .uri("https://exp.host/--/api/v2/push/send")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(requestBody), Map::class.java)
+                .retrieve()
+                .bodyToMono(Map::class.java)
+                .awaitSingle()
+
+            log.info("Push notification sent successfully: $response")
+        } catch (e: Exception) {
+            log.error("Failed to send push notification", e)
+        }
+    }
+
+    private fun getChannelId(type: NotificationType): String {
+        return when (type) {
+            NotificationType.PAYMENT_REQUEST -> "payments"
+            NotificationType.ORDER_COMPLETED -> "orders"
+            NotificationType.POINT_CHARGED -> "points"
+            NotificationType.NOTICE_CREATED -> "notices"
+        }
     }
 }

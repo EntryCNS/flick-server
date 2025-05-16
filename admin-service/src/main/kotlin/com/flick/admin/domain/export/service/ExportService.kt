@@ -3,6 +3,7 @@ package com.flick.admin.domain.export.service
 import com.flick.domain.booth.entity.BoothEntity
 import com.flick.domain.booth.enums.BoothStatus
 import com.flick.domain.booth.repository.BoothRepository
+import com.flick.domain.inquiry.repository.CategoryCount
 import com.flick.domain.order.entity.OrderEntity
 import com.flick.domain.order.entity.OrderItemEntity
 import com.flick.domain.order.repository.OrderItemRepository
@@ -15,6 +16,7 @@ import com.flick.domain.user.entity.UserEntity
 import com.flick.domain.user.repository.UserRepository
 import com.flick.domain.notification.repository.NotificationRepository
 import com.flick.domain.inquiry.repository.InquiryRepository
+import com.flick.domain.notification.repository.TypeCount
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.toList
@@ -90,7 +92,7 @@ class ExportService(
                 createProductSalesSheet(workbook, titleStyle, headerStyle, boothsList, productsList, orderItemsList)
                 createTransactionsSheet(workbook, titleStyle, headerStyle, dateFormatter, transactionsList)
                 createUserStatisticsSheet(workbook, titleStyle, headerStyle, usersList, transactionsList)
-                createSystemStatisticsSheet(workbook, titleStyle, headerStyle, notificationStats.await(), inquiryStats.await())
+                createSystemStatisticsSheet(workbook, titleStyle, headerStyle, notificationStats.await().toList(), inquiryStats.await().toList())
             }
 
             val outputStream = ByteArrayOutputStream()
@@ -453,8 +455,8 @@ class ExportService(
         workbook: XSSFWorkbook,
         titleStyle: XSSFCellStyle,
         headerStyle: XSSFCellStyle,
-        notificationStats: List<Map<String, Any>>,
-        inquiryStats: List<Map<String, Any>>
+        notificationStats: List<TypeCount>,
+        inquiryStats: List<CategoryCount>
     ) {
         val sheet = workbook.createSheet("시스템 통계")
 
@@ -481,8 +483,8 @@ class ExportService(
 
         notificationStats.forEach { stat ->
             val row = sheet.createRow(rowNum++)
-            row.createCell(0).setCellValue(stat["type"]?.toString() ?: "")
-            row.createCell(1).setCellValue(stat["count"]?.toString() ?: "0")
+            row.createCell(0).setCellValue(stat.type)
+            row.createCell(1).setCellValue(stat.count.toString())
         }
 
         rowNum += 2
@@ -502,8 +504,8 @@ class ExportService(
 
         inquiryStats.forEach { stat ->
             val row = sheet.createRow(rowNum++)
-            row.createCell(0).setCellValue(stat["category"]?.toString() ?: "")
-            row.createCell(1).setCellValue(stat["count"]?.toString() ?: "0")
+            row.createCell(0).setCellValue(stat.category)
+            row.createCell(1).setCellValue(stat.count.toString())
         }
 
         setColumnWidths(sheet, 3)

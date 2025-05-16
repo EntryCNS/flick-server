@@ -34,5 +34,7 @@ interface InquiryRepository : CoroutineCrudRepository<InquiryEntity, Long> {
     suspend fun countByCategory(category: InquiryCategory): Long
 
     @Query("SELECT category, COUNT(*) as count FROM inquiries GROUP BY category ORDER BY count DESC")
-    suspend fun countGroupByCategory(): List<Map<String, Any>>
+    fun countGroupByCategory(): Flow<CategoryCount>
 }
+
+data class CategoryCount(val category: String, val count: Long)
