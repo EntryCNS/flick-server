@@ -25,7 +25,8 @@ class ProductService(
         productRepository.findAllByBoothId(securityHolder.getBoothId()).map { it.toResponse() }
 
     suspend fun getAvailableProducts(): Flow<ProductResponse> =
-        productRepository.findAllByBoothIdAndStatus(securityHolder.getBoothId(), ProductStatus.AVAILABLE)
+        productRepository.findAllByBoothIdAndStatusIn(securityHolder.getBoothId(), listOf(ProductStatus.AVAILABLE,
+            ProductStatus.SOLD_OUT))
             .map { it.toResponse() }
 
     suspend fun getProduct(productId: Long): ProductResponse {

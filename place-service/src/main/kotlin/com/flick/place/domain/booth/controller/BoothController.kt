@@ -11,4 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 class BoothController(private val boothService: BoothService) {
     @GetMapping("/check")
     suspend fun checkBooth(@RequestParam username: String) = boothService.checkBooth(username)
+
+    @GetMapping("/sales")
+    suspend fun getSales() = boothService.getSales()
 }

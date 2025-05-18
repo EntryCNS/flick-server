@@ -52,6 +52,12 @@ class UserService(
         val user = userRepository.findById(userId)
             ?: throw CustomException(UserError.USER_NOT_FOUND)
 
+        userRepository.findAllByPushToken(request.token)
+            .collect {
+                if (it.id != userId)
+                    userRepository.save(it.copy(pushToken = null))
+            }
+
         userRepository.save(user.copy(pushToken = request.token))
     }
 

@@ -22,7 +22,7 @@ class BoothService(private val boothRepository: BoothRepository, private val pro
                 id = it.id!!,
                 name = it.name,
                 description = it.description,
-                imageUrl = it.imageUrl,
+                imageUrl = it.imageUrl
             )
         }
     }

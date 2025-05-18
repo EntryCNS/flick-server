@@ -1,7 +1,6 @@
 package com.flick.common.error
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.flick.common.utils.logger
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.reactor.mono
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler

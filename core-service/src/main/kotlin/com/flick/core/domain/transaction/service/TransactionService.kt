@@ -41,6 +41,7 @@ class TransactionService(
                 when (transaction.type) {
                     TransactionType.CHARGE -> createChargeTransactionResponse(transaction)
                     TransactionType.PAYMENT -> createPaymentTransactionResponse(transaction)
+                    else -> throw CustomException(OrderError.ORDER_NOT_FOUND)
                 }
             }
         }
@@ -53,6 +54,7 @@ class TransactionService(
         when (transaction.type) {
             TransactionType.CHARGE -> createChargeTransactionDetailResponse(transaction)
             TransactionType.PAYMENT -> createPaymentTransactionDetailResponse(transaction)
+            else -> throw CustomException(OrderError.ORDER_NOT_FOUND)
         }
     }
 

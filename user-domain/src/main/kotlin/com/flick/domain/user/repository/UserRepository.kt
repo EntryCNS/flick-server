@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param
 
 interface UserRepository : CoroutineCrudRepository<UserEntity, Long> {
     suspend fun findByDAuthId(dAuthId: String): UserEntity?
+    fun findAllByPushToken(pushToken: String): Flow<UserEntity>
 
     suspend fun findByGradeAndRoomAndNumber(
         grade: Int,
