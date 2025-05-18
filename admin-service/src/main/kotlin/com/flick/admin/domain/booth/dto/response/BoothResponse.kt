@@ -7,6 +7,7 @@ data class BoothResponse(
     val id: Long,
     val name: String,
     val description: String?,
+    val imageUrl: String?,
     val status: BoothStatus,
     val totalSales: Long,
     val createdAt: LocalDateTime,

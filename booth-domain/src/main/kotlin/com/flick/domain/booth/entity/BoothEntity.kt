@@ -25,6 +25,9 @@ data class BoothEntity(
     @Column("description")
     val description: String? = null,
 
+    @Column("image_url")
+    val imageUrl: String? = null,
+
     @Column("status")
     val status: BoothStatus = BoothStatus.PENDING,
 

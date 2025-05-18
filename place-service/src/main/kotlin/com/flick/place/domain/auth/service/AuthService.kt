@@ -50,7 +50,8 @@ class AuthService(
                 username = request.username,
                 passwordHash = passwordEncoder.encode(request.password),
                 name = request.name,
-                description = request.description
+                description = request.description,
+                imageUrl = request.imageUrl,
             )
         )
     }

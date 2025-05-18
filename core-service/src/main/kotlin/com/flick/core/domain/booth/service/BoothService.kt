@@ -21,7 +21,8 @@ class BoothService(private val boothRepository: BoothRepository, private val pro
             BoothResponse(
                 id = it.id!!,
                 name = it.name,
-                description = it.description
+                description = it.description,
+                imageUrl = it.imageUrl,
             )
         }
     }
@@ -35,7 +36,7 @@ class BoothService(private val boothRepository: BoothRepository, private val pro
             id = booth.id!!,
             name = booth.name,
             description = booth.description,
-            imageUrl = null,
+            imageUrl = booth.imageUrl,
             products = products.map {
                 BoothDetailResponse.Product(
                     id = it.id!!,

@@ -31,6 +31,7 @@ class BoothService(
                 id = it.id!!,
                 name = it.name,
                 description = it.description,
+                imageUrl = it.imageUrl,
                 status = it.status,
                 totalSales = it.totalSales,
                 createdAt = it.createdAt,
