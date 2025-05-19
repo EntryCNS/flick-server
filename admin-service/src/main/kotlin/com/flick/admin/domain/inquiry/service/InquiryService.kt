@@ -7,6 +7,7 @@ import com.flick.common.error.CustomException
 import com.flick.domain.inquiry.enums.InquiryCategory
 import com.flick.domain.inquiry.error.InquiryError
 import com.flick.domain.inquiry.repository.InquiryRepository
+import com.flick.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.stereotype.Service
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service
 @Service
 class InquiryService(
     private val inquiryRepository: InquiryRepository,
+    private val userRepository: UserRepository,
 ) {
     suspend fun getInquiries(
         category: InquiryCategory? = null,
@@ -57,7 +59,10 @@ class InquiryService(
                     category = inquiry.category,
                     title = inquiry.title,
                     content = inquiry.content,
-                    userId = inquiry.userId,
+                    user = InquiryDetailResponse.User(
+                        id = inquiry.userId,
+                        name = userRepository.findById(inquiry.userId)!!.name
+                    ),
                     createdAt = inquiry.createdAt,
                     updatedAt = inquiry.updatedAt
                 )
