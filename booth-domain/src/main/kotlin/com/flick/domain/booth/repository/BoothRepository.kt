@@ -12,7 +12,7 @@ interface BoothRepository : CoroutineCrudRepository<BoothEntity, Long> {
     @Query("SELECT EXISTS (SELECT 1 FROM booths WHERE username = :username)")
     suspend fun existsByUsername(username: String): Boolean
     fun findAllByStatusIn(status: List<BoothStatus>): Flow<BoothEntity>
-    fun findAllByOrderByTotalSalesDesc(): Flow<BoothEntity>
+    fun findAllByStatusAndOrderByTotalSalesDesc(status: BoothStatus): Flow<BoothEntity>
 
     fun findAllByStatusOrderByTotalSalesDesc(status: BoothStatus): Flow<BoothEntity>
 }

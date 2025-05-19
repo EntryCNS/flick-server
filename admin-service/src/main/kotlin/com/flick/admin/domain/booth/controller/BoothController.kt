@@ -13,6 +13,10 @@ class BoothController(
     suspend fun getBooths(@RequestParam("status") statuses: List<BoothStatus> = emptyList()) =
         boothService.getBooths(statuses)
 
+    @GetMapping("/{boothId}")
+    suspend fun getBooth(@PathVariable boothId: Long) =
+        boothService.getBooth(boothId)
+
     @PostMapping("/{boothId}/approve")
     suspend fun approveBooth(@PathVariable boothId: Long) {
         boothService.approveBooth(boothId)
