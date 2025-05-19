@@ -8,7 +8,12 @@ data class InquiryDetailResponse(
     val category: InquiryCategory,
     val title: String,
     val content: String,
-    val userId: Long,
+    val user: User,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-)
+) {
+    data class User(
+        val id: Long,
+        val name: String,
+    )
+}
