@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 data class TransactionDetailResponse(
     val id: Long,
-    val userId: Long,
+    val user: User,
     val type: TransactionType,
     val amount: Long,
     val balanceAfter: Long,
@@ -16,6 +16,11 @@ data class TransactionDetailResponse(
     val items: List<OrderItem> = emptyList(),
     val createdAt: LocalDateTime
 ) {
+    data class User(
+        val id: Long,
+        val name: String,
+    )
+
     data class Booth(
         val id: Long,
         val name: String

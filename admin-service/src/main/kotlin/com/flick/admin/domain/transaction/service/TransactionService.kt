@@ -6,8 +6,8 @@ import com.flick.common.dto.Page
 import com.flick.common.error.CustomException
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
-import com.flick.domain.order.error.OrderError
 import com.flick.domain.order.entity.OrderItemEntity
+import com.flick.domain.order.error.OrderError
 import com.flick.domain.order.repository.OrderItemRepository
 import com.flick.domain.order.repository.OrderRepository
 import com.flick.domain.product.error.ProductError
@@ -20,12 +20,10 @@ import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Service
 import org.springframework.transaction.reactive.TransactionalOperator
 import org.springframework.transaction.reactive.executeAndAwait
 import java.time.LocalDate
-import kotlin.collections.map
 
 @Service
 class TransactionService(
@@ -118,11 +116,14 @@ class TransactionService(
         )
     }
 
-    private fun createChargeTransactionDetailResponse(
+    private suspend fun createChargeTransactionDetailResponse(
         transaction: TransactionEntity
     ) = TransactionDetailResponse(
         id = transaction.id!!,
-        userId = transaction.userId,
+        user = TransactionDetailResponse.User(
+            id = transaction.userId,
+            name = getUserName(transaction.userId)
+        ),
         type = transaction.type,
         amount = transaction.amount,
         balanceAfter = transaction.balanceAfter,
@@ -141,7 +142,10 @@ class TransactionService(
 
         return TransactionDetailResponse(
             id = transaction.id!!,
-            userId = transaction.userId,
+            user = TransactionDetailResponse.User(
+                id = transaction.userId,
+                name = getUserName(transaction.userId)
+            ),
             type = transaction.type,
             amount = transaction.amount,
             balanceAfter = transaction.balanceAfter,
@@ -205,7 +209,10 @@ class TransactionService(
         transaction: TransactionEntity
     ) = TransactionDetailResponse(
         id = transaction.id!!,
-        userId = transaction.userId,
+        user = TransactionDetailResponse.User(
+            id = transaction.userId,
+            name = getUserName(transaction.userId)
+        ),
         type = transaction.type,
         amount = transaction.amount,
         balanceAfter = transaction.balanceAfter,
@@ -216,7 +223,10 @@ class TransactionService(
         transaction: TransactionEntity
     ) = TransactionDetailResponse(
         id = transaction.id!!,
-        userId = transaction.userId,
+        user = TransactionDetailResponse.User(
+            id = transaction.userId,
+            name = getUserName(transaction.userId)
+        ),
         type = transaction.type,
         amount = transaction.amount,
         balanceAfter = transaction.balanceAfter,
@@ -229,6 +239,7 @@ class TransactionService(
             val product = findProductById(orderItems.first().productId)
             TransactionResponse.Product(name = product.name)
         }
+
         else -> {
             val firstProduct = findProductById(orderItems.first().productId)
             TransactionResponse.Product(name = "${firstProduct.name} 외 ${orderItems.size - 1}개")

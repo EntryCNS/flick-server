@@ -1,6 +1,5 @@
 package com.flick.admin.domain.booth.service
 
-import com.flick.admin.domain.booth.BoothRankingCache
 import com.flick.admin.domain.booth.dto.response.BoothRankingResponse
 import com.flick.admin.domain.booth.dto.response.BoothResponse
 import com.flick.admin.infra.websocket.BoothWebSocketHandler
@@ -21,7 +20,6 @@ class BoothService(
     private val boothRepository: BoothRepository,
     private val boothWebSocketHandler: BoothWebSocketHandler,
     private val transactionalOperator: TransactionalOperator,
-    private val rankingCache: BoothRankingCache,
 ) {
     suspend fun getBooths(statuses: List<BoothStatus>): Flow<BoothResponse> {
         val booths = if (statuses.isEmpty()) boothRepository.findAll() else boothRepository.findAllByStatusIn(statuses)
@@ -51,12 +49,14 @@ class BoothService(
     suspend fun publishRanking(boothId: Long) {
         val booth = getBooth(boothId)
 
-        boothWebSocketHandler.sendRankingUpdate(BoothRankingResponse(
-            id = booth.id!!,
-            totalSales = booth.totalSales,
-            name = booth.name,
-            timestamp = LocalDateTime.now(),
-        ))
+        boothWebSocketHandler.sendRankingUpdate(
+            BoothRankingResponse(
+                id = booth.id!!,
+                totalSales = booth.totalSales,
+                name = booth.name,
+                timestamp = LocalDateTime.now(),
+            )
+        )
     }
 
     suspend fun getBoothRankings() = getCurrentRankings()
