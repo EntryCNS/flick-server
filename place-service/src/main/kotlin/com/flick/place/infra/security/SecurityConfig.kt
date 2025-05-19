@@ -72,6 +72,7 @@ class SecurityConfig(
                 .pathMatchers(HttpMethod.POST, "/orders").authenticated()
 
                 .pathMatchers(HttpMethod.GET, "/booths/check").permitAll()
+                .pathMatchers(HttpMethod.GET, "/booths/sales").hasRole(BOOTH)
 
                 .pathMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .pathMatchers(HttpMethod.POST, "/auth/register").permitAll()
