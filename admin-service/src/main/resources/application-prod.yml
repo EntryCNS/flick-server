@@ -11,3 +11,7 @@ eureka:
   client:
     service-url:
       defaultZone: http://service-registry:8761/eureka/
+
+logging:
+  level:
+    com.flick: DEBUG

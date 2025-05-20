@@ -3,6 +3,7 @@ package com.flick.core.domain.booth.service
 import com.flick.common.error.CustomException
 import com.flick.core.domain.booth.dto.response.BoothDetailResponse
 import com.flick.core.domain.booth.dto.response.BoothResponse
+import com.flick.domain.booth.enums.BoothStatus
 import com.flick.domain.booth.error.BoothError
 import com.flick.domain.booth.repository.BoothRepository
 import com.flick.domain.product.enums.ProductStatus
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service
 @Service
 class BoothService(private val boothRepository: BoothRepository, private val productRepository: ProductRepository) {
     suspend fun getBooths(): Flow<BoothResponse> {
-        val booths = boothRepository.findAll()
+        val booths = boothRepository.findAllByStatus(BoothStatus.APPROVED)
 
         return booths.map {
             BoothResponse(
@@ -30,6 +31,10 @@ class BoothService(private val boothRepository: BoothRepository, private val pro
     suspend fun getBooth(boothId: Long): BoothDetailResponse {
         val booth = boothRepository.findById(boothId)
             ?: throw CustomException(BoothError.BOOTH_NOT_FOUND)
+
+        if (booth.status != BoothStatus.APPROVED)
+            throw CustomException(BoothError.BOOTH_NOT_APPROVED)
+
         val products = productRepository.findAllByBoothId(booth.id!!)
 
         return BoothDetailResponse(

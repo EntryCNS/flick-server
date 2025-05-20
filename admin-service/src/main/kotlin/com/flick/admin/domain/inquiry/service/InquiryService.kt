@@ -7,6 +7,7 @@ import com.flick.common.error.CustomException
 import com.flick.domain.inquiry.enums.InquiryCategory
 import com.flick.domain.inquiry.error.InquiryError
 import com.flick.domain.inquiry.repository.InquiryRepository
+import com.flick.domain.user.error.UserError
 import com.flick.domain.user.repository.UserRepository
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -54,14 +55,17 @@ class InquiryService(
     suspend fun getInquiry(inquiryId: Long): InquiryDetailResponse {
         return inquiryRepository.findById(inquiryId)
             ?.let { inquiry ->
+                val user = userRepository.findById(inquiry.userId)
+                    ?: throw CustomException(UserError.USER_NOT_FOUND)
+
                 InquiryDetailResponse(
                     id = inquiry.id!!,
                     category = inquiry.category,
                     title = inquiry.title,
                     content = inquiry.content,
                     user = InquiryDetailResponse.User(
-                        id = inquiry.userId,
-                        name = userRepository.findById(inquiry.userId)!!.name
+                        id = user.id!!,
+                        name = user.name
                     ),
                     createdAt = inquiry.createdAt,
                     updatedAt = inquiry.updatedAt
